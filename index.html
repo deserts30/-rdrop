@@ -39,6 +39,17 @@
     <button id="bonusBtn" class="bonus-btn">🎁 Ежедневный бонус</button>
   </main>
 
+  <!-- Оверлей рулетки -->
+  <div id="rouletteOverlay" class="roulette-overlay hidden">
+    <div class="roulette-window">
+      <div class="roulette-track" id="rouletteTrack"></div>
+      <div class="roulette-marker"></div>
+      <div class="roulette-fade-left"></div>
+      <div class="roulette-fade-right"></div>
+    </div>
+    <div class="roulette-hint">🎰 Крутим...</div>
+  </div>
+
   <div id="garageModal" class="modal hidden">
     <div class="modal-content">
       <h2>Гараж</h2>
@@ -53,7 +64,7 @@
   <div id="shopModal" class="modal hidden">
     <div class="modal-content">
       <h2>📦 Контейнеры</h2>
-      <p style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Купи контейнер и получи машину случайной редкости</p>
+      <p style="color:#fbbf24;font-size:12px;margin-bottom:14px;">⚠️ Машины из контейнеров стоят 35% от обычной цены</p>
       <div id="containersList"></div>
       <button onclick="closeShop()">Закрыть</button>
     </div>
