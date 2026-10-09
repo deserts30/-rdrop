@@ -20,12 +20,8 @@
     <div class="xp-strip-text"><span id="xp">0</span> / <span id="xpNext">100</span> XP</div>
   </div>
 
-  <div class="country-tab" onclick="openCountryModal()">
-    <span>🌍 <span id="currentCountry">Германия</span></span><span class="chev">▾</span>
-  </div>
-
   <div class="hero-card" id="heroCard">
-    <div class="rarity-label" id="rarityLabel">НАЖМИ ВЫБИТЬ</div>
+    <div class="rarity-label" id="rarityLabel">НАЖМИ КРУТИТЬ</div>
     <div class="hero-svg" id="heroSvg"><div class="placeholder-circle">🚗</div></div>
     <div class="hero-name" id="heroName"></div>
     <div class="hero-modifier" id="heroModifier"></div>
@@ -33,34 +29,18 @@
     <div class="hero-price" id="heroPrice"></div>
   </div>
 
-  <button id="rollBtn" class="main-btn">🎰 КРУТИТЬ <small id="rollCost">500 000 ₽</small></button>
-  <button id="roll5Btn" class="main-btn red-btn">⚡ ×5 КРУТОК <small id="roll5Cost">2 500 000 ₽</small></button>
+  <button id="rollBtn" class="main-btn">🎰 КРУТИТЬ <small id="rollCost">30 000 ₽</small></button>
+  <button id="roll5Btn" class="main-btn red-btn">⚡ ×5 КРУТОК <small id="roll5Cost">120 000 ₽</small></button>
 
   <div class="menu-grid">
-    <div class="menu-tile" onclick="openGarage()">
-      <div class="menu-icon">🚗</div><div class="menu-label">Гараж</div>
-    </div>
-    <div class="menu-tile" onclick="openShop()">
-      <div class="menu-icon">📦</div><div class="menu-label">Кейсы</div>
-    </div>
-    <div class="menu-tile" onclick="openWheel()">
-      <div class="menu-icon">🎡</div><div class="menu-label">Колесо</div>
-    </div>
-    <div class="menu-tile" onclick="openTicketCase()">
-      <div class="menu-icon">🎫</div><div class="menu-label">Билеты</div>
-    </div>
-    <div class="menu-tile" onclick="openLeaderboard()">
-      <div class="menu-icon">🏆</div><div class="menu-label">Рейтинг</div>
-    </div>
-    <div class="menu-tile" onclick="showModifierInfo()">
-      <div class="menu-icon">✨</div><div class="menu-label">Редкости</div>
-    </div>
-    <div class="menu-tile" onclick="claimBonus()">
-      <div class="menu-icon">🎁</div><div class="menu-label">Бонус</div>
-    </div>
-    <div class="menu-tile" onclick="showAbout()">
-      <div class="menu-icon">❓</div><div class="menu-label">Помощь</div>
-    </div>
+    <div class="menu-tile" onclick="openGarage()"><div class="menu-icon">🚗</div><div class="menu-label">Гараж</div></div>
+    <div class="menu-tile" onclick="openShop()"><div class="menu-icon">📦</div><div class="menu-label">Кейсы</div></div>
+    <div class="menu-tile" onclick="openWheel()"><div class="menu-icon">🎡</div><div class="menu-label">Колесо</div></div>
+    <div class="menu-tile" onclick="openTicketCase()"><div class="menu-icon">🎫</div><div class="menu-label">Билеты</div></div>
+    <div class="menu-tile" onclick="openLeaderboard()"><div class="menu-icon">🏆</div><div class="menu-label">Рейтинг</div></div>
+    <div class="menu-tile" onclick="showModifierInfo()"><div class="menu-icon">✨</div><div class="menu-label">Редкости</div></div>
+    <div class="menu-tile" onclick="claimBonus()"><div class="menu-icon">🎁</div><div class="menu-label">Бонус</div></div>
+    <div class="menu-tile" onclick="showAbout()"><div class="menu-icon">❓</div><div class="menu-label">Помощь</div></div>
   </div>
 
   <div id="rouletteOverlay" class="roulette-overlay hidden">
@@ -80,8 +60,15 @@
     <button class="close-btn" onclick="closeGarage()">Закрыть</button>
   </div></div>
 
+  <div id="upgradeModal" class="modal hidden"><div class="modal-content">
+    <div class="modal-title">🔧 Апгрейд машины</div>
+    <div id="upgradeCarInfo"></div>
+    <div id="upgradeParts"></div>
+    <button class="close-btn" onclick="closeUpgrade()">Закрыть</button>
+  </div></div>
+
   <div id="shopModal" class="modal hidden"><div class="modal-content">
-    <div class="modal-title">📦 Контейнеры</div>
+    <div class="modal-title">📦 Кейсы</div>
     <p class="hint">Гарантированная машина внутри</p>
     <div id="containersList"></div>
     <button class="close-btn" onclick="closeShop()">Закрыть</button>
@@ -98,23 +85,11 @@
   <div id="ticketCaseModal" class="modal hidden"><div class="modal-content">
     <div class="modal-title">🎫 Билетный кейс</div>
     <p class="hint">5 билетов за открытие</p>
-    <div class="ticket-box-visual">
-      <svg viewBox="0 0 200 160" width="200" height="160">
-        <rect x="40" y="60" width="120" height="80" fill="#dc2626" stroke="#7f1d1d" stroke-width="3" rx="8"/>
-        <path d="M 40 60 L 100 30 L 160 60 L 100 90 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/>
-        <line x1="100" y1="30" x2="100" y2="90" stroke="#7f1d1d" stroke-width="2"/>
-        <circle cx="100" cy="105" r="14" fill="#fbbf24" stroke="#78350f" stroke-width="2"/>
-        <text x="100" y="112" text-anchor="middle" font-size="16" font-weight="bold" fill="#78350f">🎫</text>
-      </svg>
+    <div style="display:flex;justify-content:center;margin:20px 0;">
+      <div style="font-size:100px;">🎫</div>
     </div>
     <button class="green-full-btn" onclick="openTicketCaseAction()">Открыть за 5 🎫</button>
     <button class="close-btn" onclick="closeTicketCase()">Закрыть</button>
-  </div></div>
-
-  <div id="countryModal" class="modal hidden"><div class="modal-content">
-    <div class="modal-title">🌍 Выбор страны</div>
-    <div id="countriesList"></div>
-    <button class="close-btn" onclick="closeCountryModal()">Закрыть</button>
   </div></div>
 
   <div id="leaderboardModal" class="modal hidden"><div class="modal-content">
@@ -132,7 +107,7 @@
   </div></div>
 
   <div id="containerResultModal" class="modal hidden"><div class="modal-content">
-    <div class="modal-title">📦 Открыт контейнер</div>
+    <div class="modal-title">📦 Открыт кейс</div>
     <div id="containerResultBox"></div>
     <button class="green-full-btn" onclick="closeContainerResult()">Забрать</button>
   </div></div>
