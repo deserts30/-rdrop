@@ -29,6 +29,7 @@
     </div>
 
     <button id="rollBtn" class="roll-btn">🔥 ВЫБИТЬ МАШИНУ</button>
+    <button id="roll5Btn" class="roll5-btn">⚡ ВЫБИТЬ ×5 <small>(5 энергии)</small></button>
     <button id="garageBtn" class="garage-btn">🚗 Гараж</button>
     <button id="bonusBtn" class="bonus-btn">🎁 Ежедневный бонус</button>
   </main>
@@ -38,6 +39,15 @@
       <h2>Гараж</h2>
       <div id="garageList"></div>
       <button onclick="closeGarage()">Закрыть</button>
+    </div>
+  </div>
+
+  <div id="rollResultsModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 style="margin-bottom:14px;">🎰 Результат ×5</h2>
+      <div id="rollResultsList"></div>
+      <div id="rollResultsXp" style="text-align:center;color:#fbbf24;font-weight:bold;margin:14px 0;"></div>
+      <button onclick="closeRollResults()" style="width:100%;padding:12px;background:#22c55e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;">Забрать всё</button>
     </div>
   </div>
 
