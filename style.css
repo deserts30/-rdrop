@@ -72,36 +72,58 @@ header {
 }
 
 .car-display {
-  background: #1e293b;
+  background: linear-gradient(180deg, #1e293b, #0f172a);
   border: 2px solid #334155;
   border-radius: 16px;
-  padding: 30px 20px;
+  padding: 20px;
   text-align: center;
-  min-height: 200px;
+  min-height: 260px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  transition: all 0.3s;
+  align-items: center;
+  transition: all 0.4s;
   margin-bottom: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.car-svg-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 8px 0;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+}
+
+.car-svg-wrap.pop {
+  animation: car-pop 0.6s ease-out;
+}
+
+@keyframes car-pop {
+  0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
 }
 
 .rarity {
   font-size: 12px;
   font-weight: bold;
   letter-spacing: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .car-name {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
-  margin-bottom: 10px;
+  margin-top: 8px;
+  margin-bottom: 6px;
 }
 
 .car-info {
   color: #94a3b8;
-  font-size: 14px;
-  margin-bottom: 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
 }
 
 .car-price {
@@ -110,6 +132,7 @@ header {
   font-weight: bold;
 }
 
+/* ==== КНОПКИ ==== */
 .roll-btn {
   width: 100%;
   padding: 18px;
@@ -183,10 +206,114 @@ header {
   cursor: pointer;
 }
 
+/* ==== РУЛЕТКА ==== */
+.roulette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+
+.roulette-overlay.hidden { display: none; }
+
+.roulette-window {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #1e293b;
+  border: 2px solid #334155;
+  box-shadow: 0 0 60px rgba(245, 158, 11, 0.4);
+}
+
+.roulette-track {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  will-change: transform;
+}
+
+.roulette-item {
+  min-width: 130px;
+  width: 130px;
+  height: 88%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  margin: 0 5px;
+  border-radius: 10px;
+  background: #0f172a;
+  border: 2px solid #334155;
+  flex-shrink: 0;
+  transition: 0.2s;
+}
+
+.roulette-name {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.roulette-marker {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 100%;
+  background: #f59e0b;
+  box-shadow: 0 0 15px #f59e0b, 0 0 30px #f59e0b;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.roulette-fade-left,
+.roulette-fade-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  pointer-events: none;
+  z-index: 4;
+}
+.roulette-fade-left {
+  left: 0;
+  background: linear-gradient(90deg, #1e293b, transparent);
+}
+.roulette-fade-right {
+  right: 0;
+  background: linear-gradient(-90deg, #1e293b, transparent);
+}
+
+.roulette-hint {
+  color: #f59e0b;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 20px;
+  animation: hint-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ==== МОДАЛКИ ==== */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,7 +348,7 @@ header {
 .garage-item {
   background: #0f172a;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 8px;
 }
 
@@ -252,9 +379,7 @@ header {
   gap: 10px;
 }
 
-.container-card:hover {
-  border-color: #3b82f6;
-}
+.container-card:hover { border-color: #3b82f6; }
 
 .container-info b {
   font-size: 14px;
@@ -286,14 +411,8 @@ header {
   font-weight: bold;
 }
 
-.country-card:hover {
-  border-color: #3b82f6;
-}
-
-.country-card.active {
-  border-color: #22c55e;
-  background: #052e16;
-}
+.country-card:hover { border-color: #3b82f6; }
+.country-card.active { border-color: #22c55e; background: #052e16; }
 
 .xp-toast {
   position: fixed;
