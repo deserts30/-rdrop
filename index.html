@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Выбивание машин</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div>💰 <span id="balance">0</span></div>
+    <div>⚡ <span id="energy">10</span></div>
+  </header>
+
+  <main>
+    <div class="car-display" id="carDisplay">
+      <div class="placeholder">Нажми "ВЫБИТЬ"</div>
+    </div>
+
+    <button id="rollBtn" class="roll-btn">🔥 ВЫБИТЬ МАШИНУ</button>
+    <button id="garageBtn" class="garage-btn">🚗 Гараж</button>
+  </main>
+
+  <div id="garageModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Гараж</h2>
+      <div id="garageList"></div>
+      <button onclick="closeGarage()">Закрыть</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
