@@ -1,22 +1,3 @@
-// ================== МЯГКАЯ БЛОКИРОВКА ЗУМА ==================
-(function blockZoom() {
-  document.addEventListener("touchstart", function (e) {
-    if (e.touches.length > 1) e.preventDefault();
-  }, { passive: false });
-
-  document.addEventListener("touchmove", function (e) {
-    if (e.touches.length > 1) e.preventDefault();
-  }, { passive: false });
-
-  document.addEventListener("gesturestart", e => e.preventDefault());
-  document.addEventListener("gesturechange", e => e.preventDefault());
-
-  document.addEventListener("wheel", function (e) {
-    if (e.ctrlKey) e.preventDefault();
-  }, { passive: false });
-})();
-
-
 // ================== TELEGRAM ==================
 const tg = window.Telegram.WebApp;
 tg.ready();
@@ -113,24 +94,11 @@ function unlockAudio() {
     source.connect(ctx.destination);
     source.start(0);
   } catch (e) {}
-  try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.frequency.value = 200;
-    gain.gain.value = 0.001;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.01);
-  } catch (e) {}
   audioUnlocked = true;
 }
 
-["touchstart", "touchend", "click", "mousedown", "keydown"].forEach(evt => {
-  document.addEventListener(evt, function once() {
-    unlockAudio();
-    document.removeEventListener(evt, once);
-  }, { once: true });
+["touchstart", "touchend", "click", "mousedown"].forEach(evt => {
+  document.addEventListener(evt, unlockAudio, { once: true, passive: true });
 });
 
 function playTone(freq, duration, type = "sine", volume = 0.15, delay = 0) {
