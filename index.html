@@ -23,6 +23,10 @@
     </div>
   </div>
 
+  <div class="country-bar" id="countryBar" onclick="openCountryModal()">
+    🌍 <span id="currentCountry">Германия</span> <small>▾</small>
+  </div>
+
   <main>
     <div class="car-display" id="carDisplay">
       <div class="placeholder">Нажми "ВЫБИТЬ"</div>
@@ -31,14 +35,36 @@
     <button id="rollBtn" class="roll-btn">🔥 ВЫБИТЬ МАШИНУ</button>
     <button id="roll5Btn" class="roll5-btn">⚡ ВЫБИТЬ ×5 <small>(5 энергии)</small></button>
     <button id="garageBtn" class="garage-btn">🚗 Гараж</button>
+    <button id="shopBtn" class="shop-btn">📦 Магазин контейнеров</button>
     <button id="bonusBtn" class="bonus-btn">🎁 Ежедневный бонус</button>
   </main>
 
   <div id="garageModal" class="modal hidden">
     <div class="modal-content">
       <h2>Гараж</h2>
+      <button id="sellAllBtn" onclick="sellAll()" style="width:100%;padding:12px;margin:10px 0;background:linear-gradient(135deg,#ef4444,#b91c1c);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;">
+        💸 Продать всё (70% от суммы)
+      </button>
       <div id="garageList"></div>
       <button onclick="closeGarage()">Закрыть</button>
+    </div>
+  </div>
+
+  <div id="shopModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>📦 Контейнеры</h2>
+      <p style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Купи контейнер и получи машину случайной редкости</p>
+      <div id="containersList"></div>
+      <button onclick="closeShop()">Закрыть</button>
+    </div>
+  </div>
+
+  <div id="countryModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>🌍 Выбор страны</h2>
+      <p style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Страна влияет на марки машин и их цены</p>
+      <div id="countriesList"></div>
+      <button onclick="closeCountryModal()">Закрыть</button>
     </div>
   </div>
 
@@ -48,6 +74,14 @@
       <div id="rollResultsList"></div>
       <div id="rollResultsXp" style="text-align:center;color:#fbbf24;font-weight:bold;margin:14px 0;"></div>
       <button onclick="closeRollResults()" style="width:100%;padding:12px;background:#22c55e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;">Забрать всё</button>
+    </div>
+  </div>
+
+  <div id="containerResultModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 style="margin-bottom:14px;">🎁 Открыт контейнер</h2>
+      <div id="containerResultBox"></div>
+      <button onclick="closeContainerResult()" style="width:100%;padding:12px;margin-top:14px;background:#22c55e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;">Забрать</button>
     </div>
   </div>
 
