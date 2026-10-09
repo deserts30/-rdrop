@@ -15,11 +15,15 @@ const RARITY_COLORS = {
   legendary: "#f59e0b",
 };
 
-const RARITY_NAMES = {
-  common: "Обычная",
-  rare: "Редкая",
-  epic: "Эпическая",
-  legendary: "Легендарная",
+const COLOR_HEX = {
+  "Чёрный": "#1a1a1a",
+  "Белый": "#f5f5f5",
+  "Серебристый": "#c0c0c0",
+  "Красный": "#dc2626",
+  "Синий": "#2563eb",
+  "Жёлтый": "#facc15",
+  "Хамелеон": "url(#chameleon)",
+  "Матовый чёрный": "#0a0a0a",
 };
 
 const CONTAINERS = [
@@ -27,8 +31,116 @@ const CONTAINERS = [
   { id: "rare", name: "Редкий контейнер", price: 30000, chances: "Л: 5% / Э: 20%", color: "#3b82f6" },
   { id: "epic", name: "Эпический контейнер", price: 100000, chances: "Л: 20% / Э: 50%", color: "#a855f7" },
   { id: "legendary", name: "Легендарный контейнер", price: 300000, chances: "Л: 70% / Э: 30%", color: "#f59e0b" },
-  { id: "elite", name: "Элитный контейнер", price: 1000000, chances: "Л: 90% + x1.5 к цене", color: "#ec4899" },
+  { id: "elite", name: "Элитный контейнер", price: 1000000, chances: "Л: 90% + x1.5", color: "#ec4899" },
 ];
+
+// ==== SVG-РИСОВАЛКА МАШИН ====
+function carSvg(car, size = 220) {
+  const color = COLOR_HEX[car.color] || "#888";
+  const rarity = car.rarity;
+
+  // Defs (градиенты)
+  let defs = `
+    <defs>
+      <linearGradient id="chameleon" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#22d3ee"/>
+        <stop offset="50%" stop-color="#a855f7"/>
+        <stop offset="100%" stop-color="#ec4899"/>
+      </linearGradient>
+      <linearGradient id="glass" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#1e40af" stop-opacity="0.7"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${RARITY_COLORS[rarity]}" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="${RARITY_COLORS[rarity]}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+  `;
+
+  // Задний фон (свечение по редкости)
+  let glow = "";
+  if (rarity === "legendary") {
+    glow = `<ellipse cx="110" cy="100" rx="100" ry="45" fill="url(#glow)"/>`;
+  } else if (rarity === "epic") {
+    glow = `<ellipse cx="110" cy="100" rx="90" ry="40" fill="url(#glow)" opacity="0.5"/>`;
+  }
+
+  // Форма кузова зависит от редкости
+  let body = "";
+
+  if (rarity === "common") {
+    // Седан — обычная форма
+    body = `
+      <path d="M 30 90 L 50 60 L 90 55 L 130 55 L 170 60 L 190 90 L 190 110 L 30 110 Z"
+            fill="${color}" stroke="#000" stroke-width="1.5"/>
+      <path d="M 60 88 L 75 65 L 130 65 L 145 88 Z"
+            fill="url(#glass)" opacity="0.85"/>
+      <!-- фары -->
+      <rect x="178" y="82" width="12" height="6" rx="2" fill="#fef3c7"/>
+      <rect x="30" y="82" width="10" height="6" rx="2" fill="#dc2626"/>
+    `;
+  } else if (rarity === "rare") {
+    // Спорткар — низкий, скошенный
+    body = `
+      <path d="M 25 95 L 55 70 L 100 62 L 145 62 L 185 75 L 195 95 L 195 110 L 25 110 Z"
+            fill="${color}" stroke="#000" stroke-width="1.5"/>
+      <path d="M 65 92 L 85 72 L 135 72 L 150 92 Z"
+            fill="url(#glass)" opacity="0.85"/>
+      <!-- спойлер -->
+      <rect x="22" y="90" width="15" height="4" rx="1" fill="#111"/>
+      <!-- фары -->
+      <rect x="184" y="88" width="11" height="5" rx="2" fill="#fef3c7"/>
+    `;
+  } else if (rarity === "epic") {
+    // Суперкар — хищный, низкий
+    body = `
+      <path d="M 20 100 L 55 75 L 105 65 L 150 65 L 195 80 L 200 100 L 200 112 L 20 112 Z"
+            fill="${color}" stroke="#000" stroke-width="1.5"/>
+      <path d="M 70 97 L 95 75 L 140 75 L 155 97 Z"
+            fill="url(#glass)" opacity="0.85"/>
+      <!-- антикрыло -->
+      <rect x="18" y="85" width="20" height="5" rx="1" fill="#111"/>
+      <rect x="25" y="90" width="3" height="10" fill="#111"/>
+      <!-- фары -->
+      <path d="M 188 85 L 200 88 L 200 93 L 188 90 Z" fill="#fef3c7"/>
+    `;
+  } else {
+    // Гиперкар (legendary) — экстремально низкий
+    body = `
+      <path d="M 15 105 L 55 78 L 110 65 L 160 68 L 200 85 L 205 105 L 205 115 L 15 115 Z"
+            fill="${color}" stroke="#000" stroke-width="1.5"/>
+      <path d="M 75 100 L 105 78 L 145 78 L 160 100 Z"
+            fill="url(#glass)" opacity="0.9"/>
+      <!-- большое антикрыло -->
+      <rect x="10" y="82" width="30" height="6" rx="2" fill="#111"/>
+      <rect x="20" y="88" width="4" height="15" fill="#111"/>
+      <!-- выхлоп -->
+      <circle cx="20" cy="105" r="3" fill="#f59e0b"/>
+      <!-- фары -->
+      <path d="M 190 90 L 205 94 L 205 100 L 190 96 Z" fill="#fef3c7"/>
+    `;
+  }
+
+  // Колёса (общие)
+  const wheels = `
+    <circle cx="65" cy="112" r="14" fill="#0a0a0a" stroke="#222" stroke-width="2"/>
+    <circle cx="65" cy="112" r="6" fill="#666"/>
+    <circle cx="160" cy="112" r="14" fill="#0a0a0a" stroke="#222" stroke-width="2"/>
+    <circle cx="160" cy="112" r="6" fill="#666"/>
+  `;
+
+  return `
+    <svg viewBox="0 0 230 130" width="${size}" height="${size * 0.565}" xmlns="http://www.w3.org/2000/svg">
+      ${defs}
+      ${glow}
+      ${body}
+      ${wheels}
+    </svg>
+  `;
+}
+// ==== КОНЕЦ SVG-РИСОВАЛКИ ====
+
 
 async function auth() {
   try {
@@ -57,14 +169,14 @@ async function roll() {
   btn.textContent = "🎰 Крутим...";
 
   let spins = 0;
+  const fakeCars = [
+    { brand: "BMW", year: 2020, color: "Чёрный", rarity: "common" },
+    { brand: "Ferrari", year: 2019, color: "Красный", rarity: "epic" },
+    { brand: "Lada", year: 2010, color: "Белый", rarity: "common" },
+    { brand: "Bugatti", year: 2023, color: "Хамелеон", rarity: "legendary" },
+  ];
   const anim = setInterval(() => {
-    renderCar({
-      brand: ["BMW", "Lada", "Ferrari"][spins % 3],
-      year: 2000 + (spins % 25),
-      color: "Чёрный",
-      rarity: "common",
-      price: 0,
-    });
+    renderCar(fakeCars[spins % fakeCars.length]);
     spins++;
   }, 80);
 
@@ -166,16 +278,20 @@ async function sellAll() {
 function showRollResults(cars, totalXp) {
   const list = document.getElementById("rollResultsList");
   const xpEl = document.getElementById("rollResultsXp");
-  list.innerHTML = cars.map(c => `
-    <div style="padding:10px;margin-bottom:6px;border-radius:8px;background:#0f172a;border-left:4px solid ${RARITY_COLORS[c.rarity]};display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <b>${c.brand}</b> <small style="color:#94a3b8;">${c.year}</small><br>
-        <small style="color:${RARITY_COLORS[c.rarity]};font-size:10px;font-weight:bold;">${c.rarity.toUpperCase()}</small>
-        <small style="color:#94a3b8;"> • ${c.color}</small>
+  list.innerHTML = cars.map(c => {
+    const rc = RARITY_COLORS[c.rarity];
+    return `
+      <div style="padding:10px;margin-bottom:8px;border-radius:10px;background:#0f172a;border-left:4px solid ${rc};display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div style="flex-shrink:0;">${carSvg(c, 90)}</div>
+        <div style="flex:1;text-align:right;">
+          <b>${c.brand}</b> <small style="color:#94a3b8;">${c.year}</small><br>
+          <small style="color:${rc};font-size:10px;font-weight:bold;">${c.rarity.toUpperCase()}</small>
+          <small style="color:#94a3b8;"> • ${c.color}</small><br>
+          <span style="color:#22c55e;font-weight:bold;font-size:13px;">${Math.round(c.price).toLocaleString()} ₽</span>
+        </div>
       </div>
-      <div style="color:#22c55e;font-weight:bold;font-size:13px;">${Math.round(c.price).toLocaleString()} ₽</div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
   xpEl.textContent = `+${totalXp} XP всего`;
   document.getElementById("rollResultsModal").classList.remove("hidden");
 }
@@ -190,6 +306,7 @@ function showContainerResult(car) {
   box.innerHTML = `
     <div style="text-align:center;padding:20px;border-radius:12px;background:#0f172a;border:2px solid ${rc};box-shadow:0 0 25px ${rc}40;">
       <div style="color:${rc};font-size:12px;font-weight:bold;letter-spacing:2px;margin-bottom:8px;">${car.rarity.toUpperCase()}</div>
+      <div style="display:flex;justify-content:center;margin:10px 0;">${carSvg(car, 240)}</div>
       <div style="font-size:26px;font-weight:bold;margin-bottom:10px;">${car.brand}</div>
       <div style="color:#94a3b8;font-size:14px;margin-bottom:10px;">📅 ${car.year} • 🎨 ${car.color}</div>
       <div style="color:#22c55e;font-size:22px;font-weight:bold;">💰 ${Math.round(car.price).toLocaleString()}</div>
@@ -264,6 +381,7 @@ function renderCar(car, highlight = false) {
   el.style.boxShadow = highlight ? `0 0 30px ${rc}` : "none";
   el.innerHTML = `
     <div class="rarity" style="color:${rc}">${car.rarity.toUpperCase()}</div>
+    <div class="car-svg-wrap ${highlight ? 'pop' : ''}">${carSvg(car, 220)}</div>
     <div class="car-name">${car.brand}</div>
     <div class="car-info">📅 ${car.year} | 🎨 ${car.color}</div>
     ${car.price ? `<div class="car-price">💰 ${Math.round(car.price).toLocaleString()}</div>` : ""}
@@ -301,9 +419,12 @@ function openGarage() {
   list.innerHTML = state.cars.map(c => `
     <div class="garage-item" style="border-left:4px solid ${RARITY_COLORS[c.rarity]}">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div style="flex-shrink:0;">${carSvg(c, 100)}</div>
         <div style="flex:1;">
-          <b>${c.brand}</b> ${c.year} • ${c.color}<br>
-          <small>${c.rarity} • 💰 ${Math.round(c.price).toLocaleString()}</small>
+          <b>${c.brand}</b> ${c.year}<br>
+          <small style="color:${RARITY_COLORS[c.rarity]};font-weight:bold;">${c.rarity.toUpperCase()}</small>
+          <small style="color:#94a3b8;"> • ${c.color}</small><br>
+          <small>💰 ${Math.round(c.price).toLocaleString()}</small>
         </div>
         <button class="sell-btn" onclick="sellCar(${c.id})">
           Продать<br>за ${Math.round(c.price * 0.7).toLocaleString()}
@@ -352,6 +473,10 @@ document.getElementById("rollBtn").onclick = roll;
 document.getElementById("roll5Btn").onclick = roll5;
 document.getElementById("garageBtn").onclick = openGarage;
 document.getElementById("shopBtn").onclick = openShop;
-document.getElementById("bonusBtn").onclick = claimBonus;
+document.getElementById("bonusBtn").onclick = bonusBtn;
+
+function bonusBtn() {
+  claimBonus();
+}
 
 auth();
