@@ -9,7 +9,7 @@ let state = { balance: 0, energy: 0, cars: [], level: 1, xp: 0, xpNext: 100, cou
 let countriesMap = {};
 
 const RARITY_COLORS = {
-  common: "#888",
+  common: "#9ca3af",
   rare: "#3b82f6",
   epic: "#a855f7",
   legendary: "#f59e0b",
@@ -31,11 +31,11 @@ const COLOR_HEX = {
 };
 
 const CONTAINERS = [
-  { id: "common", name: "Обычный контейнер", price: 10000, chances: "Л: 0.3% / Э: 2.7%", color: "#888" },
+  { id: "common", name: "Обычный контейнер", price: 10000, chances: "Л: 0.3% / Э: 2.7%", color: "#9ca3af" },
   { id: "rare", name: "Редкий контейнер", price: 30000, chances: "Л: 2% / Э: 10%", color: "#3b82f6" },
   { id: "epic", name: "Эпический контейнер", price: 100000, chances: "Л: 5% / Э: 35%", color: "#a855f7" },
   { id: "legendary", name: "Легендарный контейнер", price: 300000, chances: "Л: 20% / Э: 55%", color: "#f59e0b" },
-  { id: "elite", name: "Элитный контейнер", price: 1000000, chances: "Л: 65% / Э: 35% + эксклюзив", color: "#ec4899" },
+  { id: "elite", name: "Элитный контейнер", price: 1000000, chances: "Л: 65% + эксклюзив", color: "#ec4899" },
 ];
 
 const FAKE_CARS = [
@@ -51,13 +51,32 @@ const FAKE_CARS = [
   { brand: "Bugatti", year: 2024, color: "Матовый чёрный", rarity: "legendary", modifier: "Юбилейная №1" },
 ];
 
-// ==== SVG-РИСОВАЛКА ====
+const MODIFIERS_INFO = [
+  { name: "Ржавая", mult: 0.35, emoji: "🦠" },
+  { name: "Мятая", mult: 0.50, emoji: "💥" },
+  { name: "Царапанная", mult: 0.65, emoji: "⚡" },
+  { name: "Грязная", mult: 0.75, emoji: "💩" },
+  { name: "Граффити", mult: 0.70, emoji: "🎨" },
+  { name: "Обычная", mult: 1.00, emoji: "🚗" },
+  { name: "Ухоженная", mult: 1.15, emoji: "✨" },
+  { name: "Эксклюзивная", mult: 1.40, emoji: "🌟" },
+  { name: "Юбилейная №1", mult: 2.00, emoji: "🏆" },
+  { name: "Коллекционная", mult: 3.00, emoji: "💎" },
+];
+
+
+// =============== SVG ===============
 function carSvg(car, size = 220) {
   const color = COLOR_HEX[car.color] || "#888";
   const rarity = car.rarity;
-  const uid = "g" + Math.random().toString(36).substring(2, 8);
+  const uid = "u" + Math.random().toString(36).substring(2, 8);
 
-  let defs = `
+  let bodyColor = color;
+  if (color === "url(#chameleon)") bodyColor = `url(#chameleon_${uid})`;
+  else if (color === "url(#gold)") bodyColor = `url(#gold_${uid})`;
+  else if (color === "url(#rainbow)") bodyColor = `url(#rainbow_${uid})`;
+
+  const defs = `
     <defs>
       <linearGradient id="chameleon_${uid}" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="#22d3ee"/>
@@ -77,21 +96,15 @@ function carSvg(car, size = 220) {
         <stop offset="100%" stop-color="#a855f7"/>
       </linearGradient>
       <linearGradient id="glass_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.9"/>
+        <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.9"/>
         <stop offset="100%" stop-color="#1e40af" stop-opacity="0.7"/>
       </linearGradient>
       <radialGradient id="glow_${uid}" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="${RARITY_COLORS[rarity]}" stop-opacity="0.7"/>
+        <stop offset="0%" stop-color="${RARITY_COLORS[rarity]}" stop-opacity="0.65"/>
         <stop offset="100%" stop-color="${RARITY_COLORS[rarity]}" stop-opacity="0"/>
       </radialGradient>
     </defs>
   `;
-
-  // Замена url(#chameleon) → url(#chameleon_<uid>) и т.д.
-  let bodyColor = color;
-  if (color === "url(#chameleon)") bodyColor = `url(#chameleon_${uid})`;
-  else if (color === "url(#gold)") bodyColor = `url(#gold_${uid})`;
-  else if (color === "url(#rainbow)") bodyColor = `url(#rainbow_${uid})`;
 
   let glow = "";
   if (rarity === "legendary") {
@@ -143,21 +156,19 @@ function carSvg(car, size = 220) {
 
   return `
     <svg viewBox="0 0 230 130" width="${size}" height="${size * 0.565}" xmlns="http://www.w3.org/2000/svg">
-      ${defs}
-      ${glow}
-      ${body}
-      ${wheels}
+      ${defs}${glow}${body}${wheels}
     </svg>
   `;
 }
 
 
 function modifierBadge(car) {
-  const m = car.modifier_meta || { name: car.modifier || "Обычная", color: "#94a3b8", emoji: "🚗" };
-  return `<span style="display:inline-block;font-size:10px;font-weight:bold;padding:2px 6px;border-radius:6px;background:${m.color}30;color:${m.color};border:1px solid ${m.color}80;">${m.emoji || ""} ${m.name}</span>`;
+  const m = car.modifier_meta || { name: car.modifier || "Обычная", color: "#78716c", emoji: "🚗" };
+  return `<span style="display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:${m.color}20;color:${m.color};border:1px solid ${m.color}60;">${m.emoji || ""} ${m.name}</span>`;
 }
 
 
+// =============== AUTH ===============
 async function auth() {
   try {
     const r = await fetch(`${API}/auth`, {
@@ -180,7 +191,7 @@ async function auth() {
 }
 
 
-// ==== РУЛЕТКА ====
+// =============== РУЛЕТКА ===============
 function showRoulette(winner) {
   return new Promise(resolve => {
     const overlay = document.getElementById("rouletteOverlay");
@@ -197,7 +208,7 @@ function showRoulette(winner) {
     }
 
     track.innerHTML = items.map(c => `
-      <div class="roulette-item" style="border-color:${RARITY_COLORS[c.rarity] || '#334155'};">
+      <div class="roulette-item" style="border-color:${RARITY_COLORS[c.rarity]};">
         ${carSvg(c, 110)}
         <div class="roulette-name">${c.brand}</div>
       </div>
@@ -228,6 +239,7 @@ function showRoulette(winner) {
 }
 
 
+// =============== КРУТКИ ===============
 async function roll() {
   const btn = document.getElementById("rollBtn");
   btn.disabled = true;
@@ -254,7 +266,7 @@ async function roll() {
     alert("Ошибка связи с сервером");
   } finally {
     btn.disabled = false;
-    btn.textContent = "🔥 ВЫБИТЬ МАШИНУ";
+    btn.textContent = "🎰 КРУТИТЬ РУЛЕТКУ";
   }
 }
 
@@ -283,7 +295,7 @@ async function roll5() {
     alert("Ошибка связи с сервером");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = "⚡ ВЫБИТЬ ×5 <small>(5 энергии)</small>";
+    btn.innerHTML = "⚡ ×5 КРУТОК <small>(5 ⚡)</small>";
   }
 }
 
@@ -334,20 +346,21 @@ async function sellAll() {
 }
 
 
+// =============== РЕЗУЛЬТАТЫ ===============
 function showRollResults(cars, totalXp) {
   const list = document.getElementById("rollResultsList");
   const xpEl = document.getElementById("rollResultsXp");
   list.innerHTML = cars.map(c => {
     const rc = RARITY_COLORS[c.rarity];
     return `
-      <div style="padding:10px;margin-bottom:8px;border-radius:10px;background:#0f172a;border-left:4px solid ${rc};display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <div style="padding:10px;margin-bottom:8px;border-radius:12px;background:#fff;border-left:4px solid ${rc};border:1.5px solid #f0e3c9;border-left-width:4px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div style="flex-shrink:0;">${carSvg(c, 90)}</div>
         <div style="flex:1;text-align:right;">
-          <b>${c.brand}</b> ${c.model ? `<small style="color:#fbbf24;">${c.model}</small>` : ""} <small style="color:#94a3b8;">${c.year}</small><br>
-          <small style="color:${rc};font-size:10px;font-weight:bold;">${c.rarity.toUpperCase()}</small>
-          <small style="color:#94a3b8;"> • ${c.color}</small><br>
+          <b>${c.brand}</b> ${c.model ? `<small style="color:#d97706;font-weight:800;">${c.model}</small>` : ""} <small style="color:#a1a1aa;">${c.year}</small><br>
+          <small style="color:${rc};font-size:10px;font-weight:800;">${c.rarity.toUpperCase()}</small>
+          <small style="color:#a1a1aa;"> • ${c.color}</small><br>
           ${modifierBadge(c)}<br>
-          <span style="color:#22c55e;font-weight:bold;font-size:13px;">${Math.round(c.price).toLocaleString()} ₽</span>
+          <span style="color:#16a34a;font-weight:800;font-size:13px;">${Math.round(c.price).toLocaleString()} ₽</span>
         </div>
       </div>
     `;
@@ -365,20 +378,20 @@ function showContainerResult(car, isSpecial) {
   const box = document.getElementById("containerResultBox");
   const rc = RARITY_COLORS[car.rarity];
   const specialBanner = isSpecial ? `
-    <div style="background:linear-gradient(90deg,#fbbf24,#f59e0b,#fbbf24);color:#1e293b;font-weight:bold;text-align:center;padding:6px;border-radius:8px;margin-bottom:10px;font-size:13px;animation:pulse 1s infinite;">
+    <div style="background:linear-gradient(90deg,#fbbf24,#f59e0b,#fbbf24);color:#78350f;font-weight:800;text-align:center;padding:8px;border-radius:10px;margin-bottom:10px;font-size:13px;">
       ⭐ ЭКСКЛЮЗИВНАЯ МАШИНА ⭐
     </div>
   ` : "";
   box.innerHTML = `
-    <div style="text-align:center;padding:20px;border-radius:12px;background:#0f172a;border:2px solid ${rc};box-shadow:0 0 25px ${rc}40;">
+    <div style="text-align:center;padding:20px;border-radius:16px;background:#fff;border:2px solid ${rc};box-shadow:0 0 25px ${rc}30;">
       ${specialBanner}
-      <div style="color:${rc};font-size:12px;font-weight:bold;letter-spacing:2px;margin-bottom:8px;">${car.rarity.toUpperCase()}</div>
+      <div style="color:${rc};font-size:12px;font-weight:800;letter-spacing:2px;margin-bottom:8px;">${car.rarity.toUpperCase()}</div>
       <div style="display:flex;justify-content:center;margin:10px 0;">${carSvg(car, 240)}</div>
-      <div style="font-size:24px;font-weight:bold;margin-bottom:4px;">${car.brand}</div>
-      ${car.model ? `<div style="color:#fbbf24;font-size:14px;font-weight:bold;margin-bottom:8px;">${car.model}</div>` : ""}
+      <div style="font-size:24px;font-weight:800;margin-bottom:4px;color:#1f2937;">${car.brand}</div>
+      ${car.model ? `<div style="color:#d97706;font-size:14px;font-weight:800;margin-bottom:8px;">${car.model}</div>` : ""}
       <div style="margin-bottom:8px;">${modifierBadge(car)}</div>
-      <div style="color:#94a3b8;font-size:14px;margin-bottom:10px;">📅 ${car.year} • 🎨 ${car.color}</div>
-      <div style="color:#22c55e;font-size:22px;font-weight:bold;">💰 ${Math.round(car.price).toLocaleString()}</div>
+      <div style="color:#78716c;font-size:14px;margin-bottom:10px;">📅 ${car.year} • 🎨 ${car.color}</div>
+      <div style="color:#16a34a;font-size:22px;font-weight:800;">💰 ${Math.round(car.price).toLocaleString()}</div>
     </div>
   `;
   document.getElementById("containerResultModal").classList.remove("hidden");
@@ -389,12 +402,13 @@ function closeContainerResult() {
 }
 
 
+// =============== МЕНЮ ===============
 function openShop() {
   const list = document.getElementById("containersList");
   list.innerHTML = CONTAINERS.map(c => `
     <div class="container-card" onclick="openContainer('${c.id}')">
       <div class="container-info">
-        <b style="color:${c.color};">📦 ${c.name}</b>
+        <b>📦 ${c.name}</b>
         <small>${c.chances}</small>
       </div>
       <div class="container-price">${c.price.toLocaleString()} ₽</div>
@@ -446,40 +460,103 @@ function updateCountryUI() {
 }
 
 
-function renderCar(car, highlight = false) {
-  const el = document.getElementById("carDisplay");
-  const rc = RARITY_COLORS[car.rarity] || "#888";
-  el.style.borderColor = rc;
-  el.style.boxShadow = highlight ? `0 0 30px ${rc}` : "none";
-  el.innerHTML = `
-    <div class="rarity" style="color:${rc}">${car.rarity.toUpperCase()}</div>
-    <div class="car-svg-wrap ${highlight ? 'pop' : ''}">${carSvg(car, 220)}</div>
-    <div class="car-name">${car.brand} ${car.model ? `<small style="color:#fbbf24;font-size:14px;">${car.model}</small>` : ""}</div>
-    <div style="margin:6px 0;">${modifierBadge(car)}</div>
-    <div class="car-info">📅 ${car.year} | 🎨 ${car.color}</div>
-    ${car.price ? `<div class="car-price">💰 ${Math.round(car.price).toLocaleString()}</div>` : ""}
-  `;
+function showModifierInfo() {
+  const body = document.getElementById("infoBody");
+  document.getElementById("infoTitle").textContent = "✨ Модификаторы машин";
+  body.innerHTML = MODIFIERS_INFO.map(m => `
+    <div style="display:flex;justify-content:space-between;padding:10px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1.5px solid #f0e3c9;">
+      <span style="font-weight:700;">${m.emoji} ${m.name}</span>
+      <span style="color:${m.mult >= 1 ? '#16a34a' : '#dc2626'};font-weight:800;">×${m.mult.toFixed(2)}</span>
+    </div>
+  `).join("");
+  document.getElementById("infoModal").classList.remove("hidden");
 }
 
+function showTopPlayers() {
+  const body = document.getElementById("infoBody");
+  document.getElementById("infoTitle").textContent = "🏆 Рейтинг";
+  body.innerHTML = `<p style="color:#78716c;font-size:14px;line-height:1.5;">Рейтинг игроков появится в следующем обновлении. Здесь будет топ-50 по стоимости гаража.</p>`;
+  document.getElementById("infoModal").classList.remove("hidden");
+}
+
+function openProfile() {
+  const body = document.getElementById("infoBody");
+  document.getElementById("infoTitle").textContent = "👤 Профиль";
+  const totalValue = state.cars.reduce((s, c) => s + c.price, 0);
+  body.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:14px;border:1.5px solid #f0e3c9;">
+      <div style="font-size:16px;font-weight:800;margin-bottom:10px;">${user.username || 'Игрок'}</div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;"><span>🏆 Уровень</span><b>${state.level}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;"><span>⚡ Энергия</span><b>${state.energy}/${state.max_energy || 10}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;"><span>💰 Баланс</span><b>${Math.round(state.balance).toLocaleString()} ₽</b></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;"><span>🚗 Машин в гараже</span><b>${state.cars.length}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;"><span>💎 Стоимость гаража</span><b>${Math.round(totalValue).toLocaleString()} ₽</b></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;"><span>🌍 Страна</span><b>${countriesMap[state.country] || '—'}</b></div>
+    </div>
+  `;
+  document.getElementById("infoModal").classList.remove("hidden");
+}
+
+function showAbout() {
+  const body = document.getElementById("infoBody");
+  document.getElementById("infoTitle").textContent = "❓ О игре";
+  body.innerHTML = `
+    <p style="color:#78756c;font-size:13px;line-height:1.6;margin-bottom:10px;">
+      <b>Выбивание машин</b> — коллекционная игра в Telegram.
+    </p>
+    <p style="color:#78756c;font-size:13px;line-height:1.6;">
+      • Крути рулетку — выбивай машины разной редкости<br>
+      • Меняй страну — меняются марки и цены<br>
+      • Продавай дубликаты — копи на новые<br>
+      • Открывай контейнеры — шанс на эксклюзив<br>
+      • Получай XP — повышай уровень
+    </p>
+  `;
+  document.getElementById("infoModal").classList.remove("hidden");
+}
+
+function closeInfo() {
+  document.getElementById("infoModal").classList.add("hidden");
+}
+
+
+// =============== RENDER ===============
+function renderCar(car, highlight = false) {
+  const labelEl = document.getElementById("rarityLabel");
+  const svgEl = document.getElementById("heroSvg");
+  const nameEl = document.getElementById("heroName");
+  const modEl = document.getElementById("heroModifier");
+  const infoEl = document.getElementById("heroInfo");
+  const priceEl = document.getElementById("heroPrice");
+
+  const rc = RARITY_COLORS[car.rarity] || "#9ca3af";
+  document.getElementById("heroCard").style.borderColor = rc;
+  document.getElementById("heroCard").style.boxShadow = highlight
+    ? `0 8px 40px ${rc}55`
+    : "0 8px 30px rgba(180, 140, 60, 0.15)";
+
+  labelEl.textContent = car.rarity ? car.rarity.toUpperCase() : "НАЖМИ ВЫБИТЬ";
+  labelEl.style.color = rc;
+
+  svgEl.innerHTML = carSvg(car, 200);
+  svgEl.className = "hero-svg " + (highlight ? "pop" : "");
+
+  nameEl.innerHTML = `${car.brand || ""} ${car.model ? `<small style="color:#d97706;font-size:14px;font-weight:800;">${car.model}</small>` : ""}`;
+  modEl.innerHTML = car.modifier ? modifierBadge(car) : "";
+  infoEl.textContent = car.year ? `📅 ${car.year} | 🎨 ${car.color}` : "";
+  priceEl.textContent = car.price ? `💰 ${Math.round(car.price).toLocaleString()} ₽` : "";
+}
 
 function render() {
-  document.getElementById("balance").textContent = state.balance.toLocaleString();
+  document.getElementById("balance").textContent = Math.round(state.balance).toLocaleString();
   document.getElementById("energy").textContent = state.energy;
+  document.getElementById("level").textContent = state.level || 1;
+  document.getElementById("xp").textContent = state.xp || 0;
+  document.getElementById("xpNext").textContent = state.xpNext || 100;
 
-  const lvlEl = document.getElementById("level");
-  const xpEl = document.getElementById("xp");
-  const xpNextEl = document.getElementById("xpNext");
-  const xpFill = document.getElementById("xpFill");
-
-  if (lvlEl) lvlEl.textContent = state.level || 1;
-  if (xpEl) xpEl.textContent = state.xp || 0;
-  if (xpNextEl) xpNextEl.textContent = state.xpNext || 100;
-  if (xpFill) {
-    const pct = state.xpNext ? Math.min(100, (state.xp / state.xpNext) * 100) : 0;
-    xpFill.style.width = pct + "%";
-  }
+  const pct = state.xpNext ? Math.min(100, (state.xp / state.xpNext) * 100) : 0;
+  document.getElementById("xpFill").style.width = pct + "%";
 }
-
 
 function showXpToast(text) {
   const toast = document.createElement("div");
@@ -490,6 +567,7 @@ function showXpToast(text) {
 }
 
 
+// =============== ГАРАЖ ===============
 function openGarage() {
   const list = document.getElementById("garageList");
   list.innerHTML = state.cars.map(c => `
@@ -497,18 +575,18 @@ function openGarage() {
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div style="flex-shrink:0;">${carSvg(c, 100)}</div>
         <div style="flex:1;">
-          <b>${c.brand}</b> ${c.model ? `<small style="color:#fbbf24;">${c.model}</small>` : ""} ${c.year}<br>
-          <small style="color:${RARITY_COLORS[c.rarity]};font-weight:bold;">${c.rarity.toUpperCase()}</small>
-          <small style="color:#94a3b8;"> • ${c.color}</small><br>
+          <b>${c.brand}</b> ${c.model ? `<small style="color:#d97706;font-weight:800;">${c.model}</small>` : ""} ${c.year}<br>
+          <small style="color:${RARITY_COLORS[c.rarity]};font-weight:800;">${c.rarity.toUpperCase()}</small>
+          <small style="color:#a1a1aa;"> • ${c.color}</small><br>
           ${modifierBadge(c)}<br>
-          <small>💰 ${Math.round(c.price).toLocaleString()}</small>
+          <small style="color:#16a34a;font-weight:800;">💰 ${Math.round(c.price).toLocaleString()}</small>
         </div>
         <button class="sell-btn" onclick="sellCar(${c.id})">
-          Продать<br>за ${Math.round(c.price * 0.7).toLocaleString()}
+          Продать<br>${Math.round(c.price * 0.7).toLocaleString()}
         </button>
       </div>
     </div>
-  `).join("") || "<p>Пусто</p>";
+  `).join("") || "<p style='color:#a1a1aa;text-align:center;padding:20px;'>Гараж пуст</p>";
   document.getElementById("garageModal").classList.remove("hidden");
 }
 
@@ -533,6 +611,7 @@ function closeGarage() {
 }
 
 
+// =============== БОНУС ===============
 async function claimBonus() {
   try {
     const r = await fetch(`${API}/bonus/${user.id}`, { method: "POST" });
@@ -550,8 +629,5 @@ async function claimBonus() {
 
 document.getElementById("rollBtn").onclick = roll;
 document.getElementById("roll5Btn").onclick = roll5;
-document.getElementById("garageBtn").onclick = openGarage;
-document.getElementById("shopBtn").onclick = openShop;
-document.getElementById("bonusBtn").onclick = claimBonus;
 
 auth();
