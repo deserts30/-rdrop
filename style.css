@@ -111,3 +111,23 @@ header {
   border-radius: 8px;
   margin-bottom: 8px;
 }
+.sell-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 8px 12px;
+  cursor: pointer;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.sell-btn:hover {
+  opacity: 0.9;
+}
+
+.sell-btn:active {
+  transform: scale(0.95);
+}
