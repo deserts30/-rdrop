@@ -3,7 +3,7 @@ tg.ready();
 tg.expand();
 
 // ВАЖНО: Позже, когда сделаем бэкенд на Render, заменим этот URL на реальный
-const API = "http://localhost:8000/api";
+const API = "https://car-game-api.onrender.com/api";
 
 const user = tg.initDataUnsafe?.user || { id: 12345, username: "test" };
 
