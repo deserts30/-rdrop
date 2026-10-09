@@ -8,91 +8,149 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div>💰 <span id="balance">0</span></div>
-    <div>⚡ <span id="energy">10</span></div>
-  </header>
 
-  <div class="level-bar">
-    <div class="level-info">🏆 Ур. <span id="level">1</span></div>
-    <div class="xp-bar">
-      <div class="xp-fill" id="xpFill"></div>
+  <div class="top-bar">
+    <div class="stat-pill">
+      <span class="stat-icon">🏆</span>
+      <span class="stat-value" id="level">1</span>
     </div>
-    <div class="xp-text">
-      <span id="xp">0</span>/<span id="xpNext">100</span> XP
+    <div class="stat-pill">
+      <span class="stat-icon">⚡</span>
+      <span class="stat-value" id="energy">10</span>
+    </div>
+    <div class="stat-pill gold-pill">
+      <span class="stat-icon">💰</span>
+      <span class="stat-value" id="balance">0</span>
     </div>
   </div>
 
-  <div class="country-bar" id="countryBar" onclick="openCountryModal()">
-    🌍 <span id="currentCountry">Германия</span> <small>▾</small>
+  <div class="xp-strip">
+    <div class="xp-strip-bar">
+      <div class="xp-strip-fill" id="xpFill"></div>
+    </div>
+    <div class="xp-strip-text"><span id="xp">0</span> / <span id="xpNext">100</span> XP</div>
   </div>
 
-  <main>
-    <div class="car-display" id="carDisplay">
-      <div class="placeholder">Нажми "ВЫБИТЬ"</div>
+  <div class="country-tab" onclick="openCountryModal()">
+    <span>🌍 <span id="currentCountry">Германия</span></span>
+    <span class="chev">▾</span>
+  </div>
+
+  <div class="hero-card" id="heroCard">
+    <div class="rarity-label" id="rarityLabel">НАЖМИ ВЫБИТЬ</div>
+    <div class="hero-svg" id="heroSvg">
+      <div class="placeholder-circle">🚗</div>
     </div>
+    <div class="hero-name" id="heroName"></div>
+    <div class="hero-modifier" id="heroModifier"></div>
+    <div class="hero-info" id="heroInfo"></div>
+    <div class="hero-price" id="heroPrice"></div>
+  </div>
 
-    <button id="rollBtn" class="roll-btn">🔥 ВЫБИТЬ МАШИНУ</button>
-    <button id="roll5Btn" class="roll5-btn">⚡ ВЫБИТЬ ×5 <small>(5 энергии)</small></button>
-    <button id="garageBtn" class="garage-btn">🚗 Гараж</button>
-    <button id="shopBtn" class="shop-btn">📦 Магазин контейнеров</button>
-    <button id="bonusBtn" class="bonus-btn">🎁 Ежедневный бонус</button>
-  </main>
+  <button id="rollBtn" class="main-btn">🎰 КРУТИТЬ РУЛЕТКУ</button>
+  <button id="roll5Btn" class="main-btn red-btn">⚡ ×5 КРУТОК <small>(5 ⚡)</small></button>
 
-  <!-- Оверлей рулетки -->
+  <div class="menu-grid">
+    <div class="menu-tile" onclick="openGarage()">
+      <div class="menu-icon">🚗</div>
+      <div class="menu-label">Гараж</div>
+    </div>
+    <div class="menu-tile" onclick="openShop()">
+      <div class="menu-icon">📦</div>
+      <div class="menu-label">Магазин</div>
+    </div>
+    <div class="menu-tile" onclick="claimBonus()">
+      <div class="menu-icon">🎁</div>
+      <div class="menu-label">Бонус</div>
+    </div>
+    <div class="menu-tile" onclick="openCountryModal()">
+      <div class="menu-icon">🌍</div>
+      <div class="menu-label">Страна</div>
+    </div>
+    <div class="menu-tile" onclick="showModifierInfo()">
+      <div class="menu-icon">✨</div>
+      <div class="menu-label">Редкости</div>
+    </div>
+    <div class="menu-tile" onclick="showTopPlayers()">
+      <div class="menu-icon">🏆</div>
+      <div class="menu-label">Рейтинг</div>
+    </div>
+    <div class="menu-tile" onclick="openProfile()">
+      <div class="menu-icon">👤</div>
+      <div class="menu-label">Профиль</div>
+    </div>
+    <div class="menu-tile" onclick="showAbout()">
+      <div class="menu-icon">❓</div>
+      <div class="menu-label">Помощь</div>
+    </div>
+  </div>
+
+  <!-- РУЛЕТКА -->
   <div id="rouletteOverlay" class="roulette-overlay hidden">
+    <div class="roulette-title">🎰 Крутим...</div>
     <div class="roulette-window">
       <div class="roulette-track" id="rouletteTrack"></div>
       <div class="roulette-marker"></div>
       <div class="roulette-fade-left"></div>
       <div class="roulette-fade-right"></div>
     </div>
-    <div class="roulette-hint">🎰 Крутим...</div>
   </div>
 
+  <!-- ГАРАЖ -->
   <div id="garageModal" class="modal hidden">
     <div class="modal-content">
-      <h2>Гараж</h2>
-      <button id="sellAllBtn" onclick="sellAll()" style="width:100%;padding:12px;margin:10px 0;background:linear-gradient(135deg,#ef4444,#b91c1c);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;">
-        💸 Продать всё (70% от суммы)
-      </button>
-      <div id="garageList"></div>
-      <button onclick="closeGarage()">Закрыть</button>
+      <div class="modal-title">🚗 Гараж</div>
+      <button class="red-full-btn" onclick="sellAll()">💸 Продать всё (70%)</button>
+      <div id="garageList" class="garage-list"></div>
+      <button class="close-btn" onclick="closeGarage()">Закрыть</button>
     </div>
   </div>
 
+  <!-- МАГАЗИН -->
   <div id="shopModal" class="modal hidden">
     <div class="modal-content">
-      <h2>📦 Контейнеры</h2>
-      <p style="color:#fbbf24;font-size:12px;margin-bottom:14px;">⚠️ Машины из контейнеров стоят 35% от обычной цены</p>
+      <div class="modal-title">📦 Контейнеры</div>
+      <p class="hint">Купи контейнер — внутри случайная машина</p>
       <div id="containersList"></div>
-      <button onclick="closeShop()">Закрыть</button>
+      <button class="close-btn" onclick="closeShop()">Закрыть</button>
     </div>
   </div>
 
+  <!-- СТРАНА -->
   <div id="countryModal" class="modal hidden">
     <div class="modal-content">
-      <h2>🌍 Выбор страны</h2>
-      <p style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Страна влияет на марки машин и их цены</p>
+      <div class="modal-title">🌍 Выбор страны</div>
+      <p class="hint">Страна влияет на марки машин и их цены</p>
       <div id="countriesList"></div>
-      <button onclick="closeCountryModal()">Закрыть</button>
+      <button class="close-btn" onclick="closeCountryModal()">Закрыть</button>
     </div>
   </div>
 
+  <!-- РЕЗУЛЬТАТ ×5 -->
   <div id="rollResultsModal" class="modal hidden">
     <div class="modal-content">
-      <h2 style="margin-bottom:14px;">🎰 Результат ×5</h2>
+      <div class="modal-title">🎰 Результат ×5</div>
       <div id="rollResultsList"></div>
-      <div id="rollResultsXp" style="text-align:center;color:#fbbf24;font-weight:bold;margin:14px 0;"></div>
-      <button onclick="closeRollResults()" style="width:100%;padding:12px;background:#22c55e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;">Забрать всё</button>
+      <div id="rollResultsXp" class="results-xp"></div>
+      <button class="green-full-btn" onclick="closeRollResults()">Забрать всё</button>
     </div>
   </div>
 
+  <!-- РЕЗУЛЬТАТ КОНТЕЙНЕРА -->
   <div id="containerResultModal" class="modal hidden">
     <div class="modal-content">
-      <h2 style="margin-bottom:14px;">🎁 Открыт контейнер</h2>
+      <div class="modal-title">🎁 Открыт контейнер</div>
       <div id="containerResultBox"></div>
-      <button onclick="closeContainerResult()" style="width:100%;padding:12px;margin-top:14px;background:#22c55e;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;">Забрать</button>
+      <button class="green-full-btn" onclick="closeContainerResult()">Забрать</button>
+    </div>
+  </div>
+
+  <!-- ИНФО -->
+  <div id="infoModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-title" id="infoTitle">Информация</div>
+      <div id="infoBody"></div>
+      <button class="close-btn" onclick="closeInfo()">Закрыть</button>
     </div>
   </div>
 
