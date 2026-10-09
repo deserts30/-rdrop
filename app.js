@@ -136,4 +136,32 @@ function closeGarage() {
 
 document.getElementById("rollBtn").onclick = roll;
 document.getElementById("garageBtn").onclick = openGarage;
+document.getElementById("bonusBtn").onclick = claimBonus;
 auth();
+
+
+async function claimBonus() {
+  try {
+    const r = await fetch(`${API}/bonus/${user.id}`, { method: "POST" });
+    const data = await r.json();
+
+    if (!r.ok) {
+      let msg = "Ошибка";
+      if (typeof data.detail === "string") {
+        msg = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        msg = data.detail.map(e => e.msg || JSON.stringify(e)).join("\n");
+      }
+      alert(msg);
+      return;
+    }
+
+    state.balance = data.new_balance;
+    state.energy = data.new_energy;
+    render();
+
+    alert(`🎁 Бонус получен!\n+${data.bonus_money} 💰\n+${data.bonus_energy} ⚡`);
+  } catch (e) {
+    alert("Ошибка связи с сервером");
+  }
+}
