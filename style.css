@@ -131,3 +131,23 @@ header {
 .sell-btn:active {
   transform: scale(0.95);
 }
+.bonus-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.bonus-btn:hover {
+  opacity: 0.9;
+}
+
+.bonus-btn:active {
+  transform: scale(0.98);
+}
