@@ -22,7 +22,7 @@ header {
   background: #1e293b;
   border-radius: 12px;
   padding: 10px 16px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .level-info {
@@ -51,6 +51,24 @@ header {
   font-size: 11px;
   color: #94a3b8;
   text-align: right;
+}
+
+.country-bar {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.country-bar small {
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .car-display {
@@ -106,6 +124,27 @@ header {
 
 .roll-btn:disabled { opacity: 0.6; }
 
+.roll5-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.roll5-btn small {
+  font-size: 12px;
+  opacity: 0.85;
+  font-weight: normal;
+}
+
+.roll5-btn:disabled { opacity: 0.6; }
+
 .garage-btn {
   width: 100%;
   padding: 14px;
@@ -115,6 +154,19 @@ header {
   border-radius: 14px;
   color: #fff;
   font-size: 16px;
+  cursor: pointer;
+}
+
+.shop-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
 }
 
@@ -139,6 +191,7 @@ header {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  z-index: 100;
 }
 
 .modal.hidden { display: none; }
@@ -149,8 +202,20 @@ header {
   padding: 20px;
   width: 100%;
   max-width: 400px;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
+}
+
+.modal-content button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: #334155;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .garage-item {
@@ -171,6 +236,63 @@ header {
   cursor: pointer;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.container-card {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border: 2px solid #1e293b;
+  transition: 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.container-card:hover {
+  border-color: #3b82f6;
+}
+
+.container-info b {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.container-info small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.container-price {
+  font-weight: bold;
+  color: #22c55e;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.country-card {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 2px solid #1e293b;
+  transition: 0.2s;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.country-card:hover {
+  border-color: #3b82f6;
+}
+
+.country-card.active {
+  border-color: #22c55e;
+  background: #052e16;
 }
 
 .xp-toast {
