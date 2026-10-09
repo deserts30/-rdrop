@@ -92,11 +92,42 @@ function openGarage() {
   const list = document.getElementById("garageList");
   list.innerHTML = state.cars.map(c => `
     <div class="garage-item" style="border-left:4px solid ${RARITY_COLORS[c.rarity]}">
-      <b>${c.brand}</b> ${c.year} • ${c.color}<br>
-      <small>${c.rarity} • 💰 ${c.price.toLocaleString()}</small>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div style="flex:1;">
+          <b>${c.brand}</b> ${c.year} • ${c.color}<br>
+          <small>${c.rarity} • 💰 ${c.price.toLocaleString()}</small>
+        </div>
+        <button class="sell-btn" onclick="sellCar(${c.id})">
+          Продать<br>за ${Math.round(c.price * 0.7).toLocaleString()}
+        </button>
+      </div>
     </div>
   `).join("") || "<p>Пусто</p>";
   document.getElementById("garageModal").classList.remove("hidden");
+}
+
+async function sellCar(carId) {
+  if (!confirm("Продать эту машину?")) return;
+
+  try {
+    const r = await fetch(`${API}/sell/${user.id}/${carId}`, { method: "POST" });
+    const data = await r.json();
+
+    if (!r.ok) {
+      alert(data.detail || "Ошибка продажи");
+      return;
+    }
+
+    state.cars = state.cars.filter(c => c.id !== carId);
+    state.balance = data.new_balance;
+
+    render();
+    openGarage();
+
+    alert(`✅ Продано за ${data.sold_price.toLocaleString()}!`);
+  } catch (e) {
+    alert("Ошибка связи с сервером");
+  }
 }
 
 function closeGarage() {
