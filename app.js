@@ -36,6 +36,17 @@ const PART_MULTS = [1, 2, 3, 5, 10];
 const UPGRADE_CHANCES = [40, 27, 16, 8];
 const UPGRADE_COST_PCT = [0.15, 0.30, 0.55, 0.90];
 
+const FAKE_CARS = [
+  { brand: "Lada", model: "2101", year: 1980, color: "Белый", rarity: "common", modifier: "Обычная" },
+  { brand: "Renault", model: "Megane", year: 2009, color: "Синий", rarity: "common", modifier: "Царапанная" },
+  { brand: "Toyota", model: "Corolla", year: 2019, color: "Серебристый", rarity: "rare", modifier: "Обычная" },
+  { brand: "BMW", model: "X1", year: 2016, color: "Чёрный", rarity: "rare", modifier: "Ухоженная" },
+  { brand: "Ford", model: "Mustang GT", year: 2018, color: "Красный", rarity: "epic", modifier: "Обычная" },
+  { brand: "Audi", model: "RS3", year: 2024, color: "Жёлтый", rarity: "epic", modifier: "Эксклюзивная" },
+  { brand: "Ferrari", model: "458 Italia", year: 2015, color: "Красный", rarity: "legendary", modifier: "Обычная" },
+  { brand: "BMW", model: "M4 Competition", year: 2024, color: "Хамелеон", rarity: "legendary", modifier: "Юбилейная №1" },
+];
+
 const MODIFIERS_INFO = [
   { name: "Ржавая", mult: 0.35, emoji: "🦠" },
   { name: "Мятая", mult: 0.50, emoji: "💥" },
@@ -137,7 +148,6 @@ function playRewardSound(rarity, special = false) {
   }
 }
 
-// ================== ФОНОВАЯ МУЗЫКА ==================
 const MUSIC_CHORDS = [
   { bass: 110.00, notes: [220.00, 261.63, 329.63] },
   { bass: 87.31,  notes: [174.61, 220.00, 261.63] },
@@ -217,7 +227,146 @@ function toggleSound() {
 }
 
 
-// ================== SVG МАШИНЫ ==================
+// ================== PNG СПРАЙТЫ МАШИН ==================
+const IMAGES_BASE = "images/cars/";
+
+const MODIFIER_CSS_FILTER = {
+  "Ржавая":        "sepia(0.7) saturate(0.6) brightness(0.75) contrast(1.1)",
+  "Мятая":         "brightness(0.9) contrast(1.15)",
+  "Царапанная":    "brightness(1.0) contrast(1.05)",
+  "Грязная":       "brightness(0.75) sepia(0.35) saturate(0.9)",
+  "Граффити":      "saturate(1.3)",
+  "Обычная":       "none",
+  "Ухоженная":     "brightness(1.1) saturate(1.15)",
+  "Эксклюзивная":  "brightness(1.15) saturate(1.25)",
+  "Юбилейная №1":  "brightness(1.15) saturate(1.3) sepia(0.2)",
+  "Коллекционная": "brightness(1.2) saturate(1.3) contrast(1.05)",
+};
+
+// Бренд → имя файла без .png
+// Добавляй сюда бренды для которых загрузил PNG в images/cars/
+const PNG_BRANDS = {
+  "BMW": "bmw",
+  "Mercedes": "mercedes",
+  "Audi": "audi",
+  "Lada": "lada",
+  "Toyota": "toyota",
+  "Ferrari": "ferrari",
+  "Porsche": "porsche",
+  "Volkswagen": "volkswagen",
+  "Ford": "ford",
+  "Honda": "honda",
+  "Nissan": "nissan",
+  "Mazda": "mazda",
+  "Hyundai": "hyundai",
+  "Renault": "renault",
+  "Volvo": "volvo",
+  "Mitsubishi": "mitsubishi",
+  "Opel": "opel",
+  "Peugeot": "peugeot",
+  "Chevrolet": "chevrolet",
+  "Škoda": "skoda",
+  "Bugatti": "bugatti",
+  "Lamborghini": "lamborghini",
+  "Rolls-Royce": "rolls-royce",
+  "Bentley": "bentley",
+  "McLaren": "mclaren",
+  "Maybach": "maybach",
+  "Koenigsegg": "koenigsegg",
+};
+
+const _pngCache = {};
+
+function brandSlugFor(brand) {
+  return PNG_BRANDS[brand] || null;
+}
+
+function isBrandPngAvailable(brand) {
+  const slug = brandSlugFor(brand);
+  return slug ? _pngCache[slug] === true : false;
+}
+
+function preloadBrandPngs() {
+  Object.values(PNG_BRANDS).forEach(slug => {
+    const url = IMAGES_BASE + slug + ".png";
+    const img = new Image();
+    img.onload = () => { _pngCache[slug] = true; };
+    img.onerror = () => { _pngCache[slug] = false; };
+    img.src = url;
+  });
+}
+
+function modifierDefectOverlay(modifier) {
+  if (modifier === "Мятая") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <path d="M 40 50 L 55 62 L 48 72 L 62 82" stroke="#000" stroke-width="2.5" fill="none" opacity="0.5"/>
+      <path d="M 140 55 L 155 65 L 148 78" stroke="#000" stroke-width="2.5" fill="none" opacity="0.5"/></svg>`;
+  }
+  if (modifier === "Царапанная") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <line x1="50" y1="45" x2="75" y2="85" stroke="#fff" stroke-width="1.2" opacity="0.7"/>
+      <line x1="58" y1="45" x2="82" y2="85" stroke="#fff" stroke-width="1" opacity="0.5"/>
+      <line x1="120" y1="55" x2="150" y2="95" stroke="#fff" stroke-width="1.2" opacity="0.7"/></svg>`;
+  }
+  if (modifier === "Ржавая") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <circle cx="55" cy="60" r="6" fill="#6b3410" opacity="0.7"/>
+      <circle cx="120" cy="55" r="5" fill="#6b3410" opacity="0.6"/>
+      <circle cx="155" cy="75" r="7" fill="#6b3410" opacity="0.7"/>
+      <circle cx="90" cy="85" r="4" fill="#6b3410" opacity="0.6"/></svg>`;
+  }
+  if (modifier === "Грязная") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <ellipse cx="80" cy="100" rx="25" ry="6" fill="#4a3520" opacity="0.4"/>
+      <ellipse cx="150" cy="100" rx="18" ry="5" fill="#4a3520" opacity="0.4"/></svg>`;
+  }
+  if (modifier === "Граффити") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <text x="70" y="85" font-size="20" font-weight="bold" fill="#ec4899" opacity="0.9" font-family="Arial">A$AP</text></svg>`;
+  }
+  if (modifier === "Ухоженная") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <circle cx="55" cy="55" r="3" fill="#fff" opacity="0.9"/>
+      <circle cx="100" cy="50" r="2.5" fill="#fff" opacity="0.9"/>
+      <circle cx="140" cy="58" r="3" fill="#fff" opacity="0.9"/></svg>`;
+  }
+  if (modifier === "Юбилейная №1" || modifier === "Коллекционная") {
+    return `<svg viewBox="0 0 200 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+      <text x="100" y="75" font-size="28" font-weight="bold" fill="#fbbf24" font-family="Arial" text-anchor="middle" opacity="0.85">№1</text></svg>`;
+  }
+  return "";
+}
+
+// Универсальный рендер: PNG если есть, иначе SVG
+function carImageHtml(car, size = 220) {
+  const brand = car.brand || "";
+  const modifier = car.modifier || "Обычная";
+
+  if (isBrandPngAvailable(brand)) {
+    const slug = brandSlugFor(brand);
+    const url = IMAGES_BASE + slug + ".png";
+    const filter = MODIFIER_CSS_FILTER[modifier] || "none";
+    const rarityColor = RARITY_COLORS[car.rarity] || "#9ca3af";
+
+    let glowShadow = "";
+    if (car.rarity === "legendary") glowShadow = `filter: drop-shadow(0 0 20px ${rarityColor}) drop-shadow(0 0 40px ${rarityColor});`;
+    else if (car.rarity === "epic") glowShadow = `filter: drop-shadow(0 0 12px ${rarityColor}80);`;
+
+    return `
+      <div style="position:relative; display:inline-block; width:${size}px; max-width:100%; ${glowShadow}">
+        <img src="${url}" alt="${brand}"
+             style="width:100%; height:auto; filter:${filter}; display:block; image-rendering:-webkit-optimize-contrast;"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+        <div style="display:none;">${carSvg(car, size)}</div>
+        ${modifierDefectOverlay(modifier)}
+      </div>`;
+  }
+
+  return carSvg(car, size);
+}
+
+
+// ================== SVG МАШИНЫ (фоллбек) ==================
 function carSvg(car, size = 220) {
   const color = COLOR_HEX[car.color] || "#888";
   const rarity = car.rarity;
@@ -428,9 +577,7 @@ function showCaseOpening(car, caseId) {
     const skipBtn = document.getElementById("caseSkip");
 
     const rc = RARITY_COLORS[car.rarity] || "#fbbf24";
-    const isHighRarity = car.rarity === "epic" || car.rarity === "legendary";
 
-    // Reset
     overlay.classList.remove("hidden");
     scene.classList.remove("hidden", "pullback");
     holder.classList.remove("shake", "shake-slow");
@@ -462,7 +609,6 @@ function showCaseOpening(car, caseId) {
     _caseSkipFn = finish;
     if (skipBtn) skipBtn.onclick = finish;
 
-    // 1. Начинаем медленную тряску + свечение
     timeouts.push(setTimeout(() => {
       if (finished) return;
       holder.classList.add("shake-slow");
@@ -475,7 +621,6 @@ function showCaseOpening(car, caseId) {
       }, 100);
     }, 100));
 
-    // 2. Ускоряем тряску + пульсация свечения
     timeouts.push(setTimeout(() => {
       if (finished) return;
       holder.classList.remove("shake-slow");
@@ -483,7 +628,6 @@ function showCaseOpening(car, caseId) {
       glow.classList.add("pulse");
     }, 1100));
 
-    // 3. Вспышка + звук
     timeouts.push(setTimeout(() => {
       if (finished) return;
       holder.classList.remove("shake");
@@ -494,7 +638,6 @@ function showCaseOpening(car, caseId) {
       if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
     }, 1900));
 
-    // 4. Показываем машину
     timeouts.push(setTimeout(() => {
       if (finished) return;
       scene.classList.add("pullback");
@@ -507,19 +650,16 @@ function showCaseOpening(car, caseId) {
       result.classList.remove("hidden");
       result.innerHTML = `
         <div class="case-result-rarity" style="color:${rc};text-shadow:0 0 25px ${rc};">${car.rarity.toUpperCase()}</div>
-        <div class="case-result-car">${carSvg(car, 260)}</div>
+        <div class="case-result-car">${carImageHtml(car, 260)}</div>
         <div class="case-result-name">${car.brand} ${car.model}</div>
         <div style="margin:10px 0;">${modifierBadge(car)}</div>
         <div style="color:#a1a1aa;font-size:14px;">📅 ${car.year} • 🎨 ${car.color}</div>
         <div class="case-result-price">💰 ${Math.round(car.price).toLocaleString()} ₽</div>
       `;
       playRewardSound(car.rarity, false);
-
-      // Скрываем skip, оставляем любование
       if (skipBtn) skipBtn.classList.add("hidden");
     }, 2200));
 
-    // 5. Автозакрытие
     timeouts.push(setTimeout(finish, 5500));
   });
 }
@@ -572,7 +712,7 @@ function renderUpgradeModal() {
   document.getElementById("upgradeCarInfo").innerHTML = `
     <div style="background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;border:1.5px solid #f0e3c9;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="flex-shrink:0;">${carSvg(car, 90)}</div>
+        <div style="flex-shrink:0;">${carImageHtml(car, 90)}</div>
         <div style="flex:1;text-align:right;">
           <b>${car.brand} ${car.model}</b><br>
           <small style="color:#a1a1aa;">📅 ${car.year} • ${car.color}</small><br>
@@ -645,7 +785,7 @@ function openGarage() {
     list.innerHTML = state.cars.map(c => `
       <div class="garage-item" style="border-left:4px solid ${RARITY_COLORS[c.rarity]}">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-          <div style="flex-shrink:0;">${carSvg(c, 90)}</div>
+          <div style="flex-shrink:0;">${carImageHtml(c, 90)}</div>
           <div style="flex:1;">
             <b>${c.brand}</b> ${c.model} ${c.year}<br>
             <small style="color:${RARITY_COLORS[c.rarity]};font-weight:800;">${c.rarity.toUpperCase()}</small>
@@ -702,7 +842,7 @@ function showRollResults(cars, totalXp) {
   list.innerHTML = cars.map((c, i) => {
     const rc = RARITY_COLORS[c.rarity];
     return `<div class="roll-result-item" style="border-left-color:${rc};animation-delay:${i * 0.12}s;">
-      <div style="flex-shrink:0;">${carSvg(c, 85)}</div>
+      <div style="flex-shrink:0;">${carImageHtml(c, 85)}</div>
       <div style="flex:1;text-align:right;">
         <b>${c.brand} ${c.model}</b><br>
         <small style="color:#a1a1aa;">${c.year} • ${c.color}</small><br>
@@ -924,7 +1064,7 @@ function renderProfile() {
       <div style="margin-top:12px;font-weight:800;color:#78350f;font-size:14px;">🏅 Лучшая машина:</div>
       <div style="background:#fff;border-radius:14px;padding:12px;margin-top:6px;border:1.5px solid #f0e3c9;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-          <div style="flex-shrink:0;">${carSvg(bestCar, 80)}</div>
+          <div style="flex-shrink:0;">${carImageHtml(bestCar, 80)}</div>
           <div style="flex:1;text-align:right;">
             <b>${bestCar.brand} ${bestCar.model}</b><br>
             <small style="color:#a1a1aa;">${bestCar.year} • ${bestCar.color}</small><br>
@@ -964,7 +1104,7 @@ function renderCar(car, highlight = false) {
   label.style.color = rc;
 
   const svg = document.getElementById("heroSvg");
-  svg.innerHTML = carSvg(car, 200);
+  svg.innerHTML = carImageHtml(car, 200);
   svg.className = "hero-svg " + (highlight ? "pop" : "");
 
   document.getElementById("heroName").textContent = `${car.brand} ${car.model}`;
@@ -1013,5 +1153,6 @@ async function claimBonus() {
 const sb = document.getElementById("soundToggle");
 if (sb) sb.onclick = toggleSound;
 
+preloadBrandPngs();
 auth();
 setInterval(updateBadges, 30000);
