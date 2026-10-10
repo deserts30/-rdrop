@@ -368,18 +368,23 @@ async function auth() {
 
 
 // ================== РУЛЕТКА ==================
+let _rouletteSkipFn = null;
+
+function skipRouletteAnim() {
+  if (_rouletteSkipFn) _rouletteSkipFn();
+}
+
 function showRoulette(winner) {
   return new Promise(resolve => {
     const overlay = document.getElementById("rouletteOverlay");
     const track = document.getElementById("rouletteTrack");
-
+    const skipBtn = document.getElementById("rouletteSkip");
     const ITEM_W = 140, TOTAL = 42, WINNER_POS = 36;
     const items = [];
     for (let i = 0; i < TOTAL; i++) {
       if (i === WINNER_POS) items.push(winner);
       else items.push(FAKE_CARS[Math.floor(Math.random() * FAKE_CARS.length)]);
     }
-
     track.innerHTML = items.map(c => `
       <div class="roulette-item" style="border-color:${RARITY_COLORS[c.rarity]};">
         ${carSvg(c, 105)}
@@ -387,6 +392,7 @@ function showRoulette(winner) {
       </div>`).join("");
 
     overlay.classList.remove("hidden");
+    if (skipBtn) skipBtn.style.display = "block";
     track.style.transition = "none";
     track.style.transform = "translateX(0)";
     void track.offsetWidth;
@@ -397,17 +403,43 @@ function showRoulette(winner) {
     const jitter = (Math.random() - 0.5) * (ITEM_W * 0.5);
     const finalX = -(targetCenter - centerW + jitter);
 
-    playSpinSound(4000);
+    let finished = false;
+    let timeoutId = null;
+    let tickTimeoutId = null;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (tickTimeoutId) clearTimeout(tickTimeoutId);
+      overlay.classList.add("hidden");
+      track.style.transition = "none";
+      if (skipBtn) skipBtn.style.display = "none";
+      _rouletteSkipFn = null;
+      playRewardSound(winner.rarity, false);
+      resolve();
+    };
+
+    _rouletteSkipFn = finish;
+    if (skipBtn) skipBtn.onclick = finish;
+
+    // Звук крутки с возможностью прервать
+    const startTime = performance.now();
+    const tickLoop = () => {
+      if (finished) return;
+      const elapsed = performance.now() - startTime;
+      if (elapsed >= 4000) return;
+      playTick();
+      const p = elapsed / 4000;
+      const nextInterval = 45 + Math.pow(p, 2.8) * 380;
+      tickTimeoutId = setTimeout(tickLoop, nextInterval);
+    };
+    tickLoop();
 
     track.style.transition = "transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)";
     track.style.transform = `translateX(${finalX}px)`;
 
-    setTimeout(() => {
-      overlay.classList.add("hidden");
-      track.style.transition = "none";
-      playRewardSound(winner.rarity, false);
-      resolve();
-    }, 4200);
+    timeoutId = setTimeout(finish, 4200);
   });
 }
 
