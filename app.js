@@ -36,17 +36,6 @@ const PART_MULTS = [1, 2, 3, 5, 10];
 const UPGRADE_CHANCES = [40, 27, 16, 8];
 const UPGRADE_COST_PCT = [0.15, 0.30, 0.55, 0.90];
 
-const FAKE_CARS = [
-  { brand: "Lada", model: "2101", year: 1980, color: "Белый", rarity: "common", modifier: "Обычная" },
-  { brand: "Renault", model: "Megane", year: 2009, color: "Синий", rarity: "common", modifier: "Царапанная" },
-  { brand: "Toyota", model: "Corolla", year: 2019, color: "Серебристый", rarity: "rare", modifier: "Обычная" },
-  { brand: "BMW", model: "X1", year: 2016, color: "Чёрный", rarity: "rare", modifier: "Ухоженная" },
-  { brand: "Ford", model: "Mustang GT", year: 2018, color: "Красный", rarity: "epic", modifier: "Обычная" },
-  { brand: "Audi", model: "RS3", year: 2024, color: "Жёлтый", rarity: "epic", modifier: "Эксклюзивная" },
-  { brand: "Ferrari", model: "458 Italia", year: 2015, color: "Красный", rarity: "legendary", modifier: "Обычная" },
-  { brand: "BMW", model: "M4 Competition", year: 2024, color: "Хамелеон", rarity: "legendary", modifier: "Юбилейная №1" },
-];
-
 const MODIFIERS_INFO = [
   { name: "Ржавая", mult: 0.35, emoji: "🦠" },
   { name: "Мятая", mult: 0.50, emoji: "💥" },
@@ -92,7 +81,6 @@ function unlockAudio() {
   if (soundEnabled && !musicTimer) startMusic();
 }
 
-// Разблокировка аудио при каждом тапе
 ["touchstart","touchend","click","mousedown"].forEach(e =>
   document.addEventListener(e, unlockAudio, { passive: true })
 );
@@ -151,17 +139,15 @@ function playRewardSound(rarity, special = false) {
 
 // ================== ФОНОВАЯ МУЗЫКА ==================
 const MUSIC_CHORDS = [
-  { bass: 110.00, notes: [220.00, 261.63, 329.63] },  // Am
-  { bass: 87.31,  notes: [174.61, 220.00, 261.63] },  // F
-  { bass: 130.81, notes: [261.63, 329.63, 392.00] },  // C
-  { bass: 98.00,  notes: [196.00, 246.94, 293.66] },  // G
+  { bass: 110.00, notes: [220.00, 261.63, 329.63] },
+  { bass: 87.31,  notes: [174.61, 220.00, 261.63] },
+  { bass: 130.81, notes: [261.63, 329.63, 392.00] },
+  { bass: 98.00,  notes: [196.00, 246.94, 293.66] },
 ];
 
 function playMusicChord(chord) {
   if (!soundEnabled) return;
   const ctx = getAudioCtx(); if (!ctx) return;
-
-  // Бас
   try {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "sine"; o.frequency.value = chord.bass;
@@ -174,7 +160,6 @@ function playMusicChord(chord) {
     o.start(t); o.stop(t + 2.0);
   } catch (e) {}
 
-  // Аккорд
   chord.notes.forEach((f, i) => {
     try {
       const o = ctx.createOscillator(), g = ctx.createGain();
@@ -424,78 +409,118 @@ async function updateBadges() {
 }
 
 
-// ================== РУЛЕТКА ==================
-let _rouletteSkipFn = null;
+// ================== АНИМАЦИЯ ОТКРЫТИЯ КЕЙСА ==================
+let _caseSkipFn = null;
 
-function skipRouletteAnim() {
-  if (_rouletteSkipFn) _rouletteSkipFn();
+function skipCaseAnim() {
+  if (_caseSkipFn) _caseSkipFn();
 }
 
-function showRoulette(winner) {
+function showCaseOpening(car, caseId) {
   return new Promise(resolve => {
-    const overlay = document.getElementById("rouletteOverlay");
-    const track = document.getElementById("rouletteTrack");
-    const skipBtn = document.getElementById("rouletteSkip");
-    const ITEM_W = 140, TOTAL = 42, WINNER_POS = 36;
-    const items = [];
-    for (let i = 0; i < TOTAL; i++) {
-      if (i === WINNER_POS) items.push(winner);
-      else items.push(FAKE_CARS[Math.floor(Math.random() * FAKE_CARS.length)]);
-    }
-    track.innerHTML = items.map(c => `
-      <div class="roulette-item" style="border-color:${RARITY_COLORS[c.rarity]};">
-        ${carSvg(c, 105)}
-        <div class="roulette-name">${c.brand}</div>
-      </div>`).join("");
+    const overlay = document.getElementById("caseOpenOverlay");
+    const scene = document.getElementById("caseScene");
+    const holder = document.getElementById("caseSvgHolder");
+    const flash = document.getElementById("caseFlash");
+    const glow = document.getElementById("caseGlow");
+    const rays = document.getElementById("caseRays");
+    const result = document.getElementById("caseResult");
+    const skipBtn = document.getElementById("caseSkip");
 
+    const rc = RARITY_COLORS[car.rarity] || "#fbbf24";
+    const isHighRarity = car.rarity === "epic" || car.rarity === "legendary";
+
+    // Reset
     overlay.classList.remove("hidden");
-    if (skipBtn) skipBtn.style.display = "block";
-    track.style.transition = "none";
-    track.style.transform = "translateX(0)";
-    void track.offsetWidth;
+    scene.classList.remove("hidden", "pullback");
+    holder.classList.remove("shake", "shake-slow");
+    holder.style.filter = "drop-shadow(0 10px 30px rgba(0,0,0,0.5))";
+    flash.classList.remove("on");
+    glow.classList.remove("on", "pulse");
+    glow.style.setProperty("--glow-color", rc);
+    rays.classList.remove("on");
+    result.classList.add("hidden");
+    result.innerHTML = "";
+    if (skipBtn) { skipBtn.classList.remove("hidden"); skipBtn.style.display = "block"; }
 
-    const windowEl = overlay.querySelector(".roulette-window");
-    const centerW = windowEl.offsetWidth / 2;
-    const targetCenter = ITEM_W * WINNER_POS + ITEM_W / 2;
-    const jitter = (Math.random() - 0.5) * (ITEM_W * 0.5);
-    const finalX = -(targetCenter - centerW + jitter);
+    holder.innerHTML = caseSvg(caseId, 180);
 
     let finished = false;
-    let timeoutId = null;
-    let tickTimeoutId = null;
+    const timeouts = [];
+    let tickInterval = null;
 
     const finish = () => {
       if (finished) return;
       finished = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      if (tickTimeoutId) clearTimeout(tickTimeoutId);
+      timeouts.forEach(t => clearTimeout(t));
+      if (tickInterval) clearInterval(tickInterval);
       overlay.classList.add("hidden");
-      track.style.transition = "none";
-      if (skipBtn) skipBtn.style.display = "none";
-      _rouletteSkipFn = null;
-      playRewardSound(winner.rarity, false);
+      _caseSkipFn = null;
       resolve();
     };
 
-    _rouletteSkipFn = finish;
+    _caseSkipFn = finish;
     if (skipBtn) skipBtn.onclick = finish;
 
-    const startTime = performance.now();
-    const tickLoop = () => {
+    // 1. Начинаем медленную тряску + свечение
+    timeouts.push(setTimeout(() => {
       if (finished) return;
-      const elapsed = performance.now() - startTime;
-      if (elapsed >= 4000) return;
-      playTick();
-      const p = elapsed / 4000;
-      const nextInterval = 45 + Math.pow(p, 2.8) * 380;
-      tickTimeoutId = setTimeout(tickLoop, nextInterval);
-    };
-    tickLoop();
+      holder.classList.add("shake-slow");
+      glow.classList.add("on");
+      let tickCount = 0;
+      tickInterval = setInterval(() => {
+        if (finished || tickCount >= 20) { clearInterval(tickInterval); return; }
+        playTick();
+        tickCount++;
+      }, 100);
+    }, 100));
 
-    track.style.transition = "transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)";
-    track.style.transform = `translateX(${finalX}px)`;
+    // 2. Ускоряем тряску + пульсация свечения
+    timeouts.push(setTimeout(() => {
+      if (finished) return;
+      holder.classList.remove("shake-slow");
+      holder.classList.add("shake");
+      glow.classList.add("pulse");
+    }, 1100));
 
-    timeoutId = setTimeout(finish, 4200);
+    // 3. Вспышка + звук
+    timeouts.push(setTimeout(() => {
+      if (finished) return;
+      holder.classList.remove("shake");
+      flash.classList.add("on");
+      rays.classList.add("on");
+      playTone(120, 0.5, "sawtooth", 0.28);
+      playTone(80, 0.6, "sine", 0.22, 0.05);
+      if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+    }, 1900));
+
+    // 4. Показываем машину
+    timeouts.push(setTimeout(() => {
+      if (finished) return;
+      scene.classList.add("pullback");
+      setTimeout(() => {
+        if (finished) return;
+        scene.classList.add("hidden");
+        scene.classList.remove("pullback");
+      }, 250);
+
+      result.classList.remove("hidden");
+      result.innerHTML = `
+        <div class="case-result-rarity" style="color:${rc};text-shadow:0 0 25px ${rc};">${car.rarity.toUpperCase()}</div>
+        <div class="case-result-car">${carSvg(car, 260)}</div>
+        <div class="case-result-name">${car.brand} ${car.model}</div>
+        <div style="margin:10px 0;">${modifierBadge(car)}</div>
+        <div style="color:#a1a1aa;font-size:14px;">📅 ${car.year} • 🎨 ${car.color}</div>
+        <div class="case-result-price">💰 ${Math.round(car.price).toLocaleString()} ₽</div>
+      `;
+      playRewardSound(car.rarity, false);
+
+      // Скрываем skip, оставляем любование
+      if (skipBtn) skipBtn.classList.add("hidden");
+    }, 2200));
+
+    // 5. Автозакрытие
+    timeouts.push(setTimeout(finish, 5500));
   });
 }
 
@@ -511,7 +536,7 @@ async function openCase(caseId, count = 1) {
     if (!r.ok) { alert(data.detail || "Ошибка"); return; }
 
     if (count === 1) {
-      await showRoulette(data.car);
+      await showCaseOpening(data.car, caseId);
     }
 
     state.balance = data.balance;
@@ -523,7 +548,6 @@ async function openCase(caseId, count = 1) {
 
     if (count === 1) {
       renderCar(data.car, true);
-      showContainerResult(data.car);
     } else {
       renderCar(data.cars[data.cars.length - 1], true);
       showRollResults(data.cars, data.xp_gained);
@@ -672,28 +696,12 @@ async function sellAll() {
 function closeGarage() { document.getElementById("garageModal").classList.add("hidden"); }
 
 
-// ================== РЕЗУЛЬТАТЫ ==================
-function showContainerResult(car) {
-  const box = document.getElementById("containerResultBox");
-  const rc = RARITY_COLORS[car.rarity];
-  box.innerHTML = `
-    <div style="text-align:center;padding:16px;border-radius:16px;background:#fff;border:2px solid ${rc};box-shadow:0 0 25px ${rc}30;">
-      <div style="color:${rc};font-size:12px;font-weight:800;letter-spacing:2px;margin-bottom:8px;">${car.rarity.toUpperCase()}</div>
-      <div style="display:flex;justify-content:center;margin:10px 0;">${carSvg(car, 220)}</div>
-      <div style="font-size:22px;font-weight:800;color:#1f2937;">${car.brand} ${car.model}</div>
-      <div style="margin:8px 0;">${modifierBadge(car)}</div>
-      <div style="color:#78716c;font-size:13px;">📅 ${car.year} • 🎨 ${car.color}</div>
-      <div style="color:#16a34a;font-size:20px;font-weight:800;margin-top:8px;">💰 ${Math.round(car.price).toLocaleString()}</div>
-    </div>`;
-  document.getElementById("containerResultModal").classList.remove("hidden");
-}
-function closeContainerResult() { document.getElementById("containerResultModal").classList.add("hidden"); }
-
+// ================== РЕЗУЛЬТАТ ×5 ==================
 function showRollResults(cars, totalXp) {
   const list = document.getElementById("rollResultsList");
-  list.innerHTML = cars.map(c => {
+  list.innerHTML = cars.map((c, i) => {
     const rc = RARITY_COLORS[c.rarity];
-    return `<div style="padding:10px;margin-bottom:8px;border-radius:12px;background:#fff;border-left:4px solid ${rc};border:1.5px solid #f0e3c9;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+    return `<div class="roll-result-item" style="border-left-color:${rc};animation-delay:${i * 0.12}s;">
       <div style="flex-shrink:0;">${carSvg(c, 85)}</div>
       <div style="flex:1;text-align:right;">
         <b>${c.brand} ${c.model}</b><br>
@@ -935,75 +943,4 @@ function showModifierInfo() {
   document.getElementById("infoTitle").textContent = "✨ Модификаторы";
   document.getElementById("infoBody").innerHTML = MODIFIERS_INFO.map(m =>
     `<div style="display:flex;justify-content:space-between;padding:10px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1.5px solid #f0e3c9;">
-      <span style="font-weight:700;">${m.emoji} ${m.name}</span>
-      <span style="color:${m.mult >= 1 ? '#16a34a' : '#dc2626'};font-weight:800;">×${m.mult.toFixed(2)}</span>
-    </div>`).join("");
-  document.getElementById("infoModal").classList.remove("hidden");
-}
-
-function closeInfo() { document.getElementById("infoModal").classList.add("hidden"); }
-
-
-// ================== RENDER ==================
-function renderCar(car, highlight = false) {
-  const rc = RARITY_COLORS[car.rarity] || "#9ca3af";
-  const card = document.getElementById("heroCard");
-  card.style.borderColor = rc;
-  card.className = "hero-card" + (car.rarity === "legendary" ? " legendary" : car.rarity === "epic" ? " epic" : "");
-
-  const label = document.getElementById("rarityLabel");
-  label.textContent = car.rarity ? car.rarity.toUpperCase() : "ДОБРО ПОЖАЛОВАТЬ";
-  label.style.color = rc;
-
-  const svg = document.getElementById("heroSvg");
-  svg.innerHTML = carSvg(car, 200);
-  svg.className = "hero-svg " + (highlight ? "pop" : "");
-
-  document.getElementById("heroName").textContent = `${car.brand} ${car.model}`;
-  document.getElementById("heroModifier").innerHTML = car.modifier ? modifierBadge(car) : "";
-  document.getElementById("heroInfo").textContent = car.year ? `📅 ${car.year} | 🎨 ${car.color}` : "";
-  document.getElementById("heroPrice").textContent = car.price ? `💰 ${Math.round(car.price).toLocaleString()} ₽` : "";
-}
-
-function render() {
-  document.getElementById("balance").textContent = Math.round(state.balance).toLocaleString();
-  document.getElementById("tickets").textContent = state.tickets || 0;
-  document.getElementById("level").textContent = state.level || 1;
-  document.getElementById("xp").textContent = state.xp || 0;
-  document.getElementById("xpNext").textContent = state.xpNext || 100;
-  const pct = state.xpNext ? Math.min(100, (state.xp / state.xpNext) * 100) : 0;
-  document.getElementById("xpFill").style.width = pct + "%";
-}
-
-function showXpToast(text) {
-  const t = document.createElement("div");
-  t.className = "xp-toast";
-  t.textContent = text;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 1500);
-}
-
-
-// ================== БОНУС ==================
-async function claimBonus() {
-  try {
-    const r = await fetch(`${API}/bonus/${user.id}`, { method: "POST" });
-    const data = await r.json();
-    if (!r.ok) { alert(data.detail || "Ошибка"); return; }
-    state.balance = data.new_balance;
-    render();
-    playTone(660, 0.1, "sine", 0.15);
-    playTone(880, 0.1, "sine", 0.15, 0.08);
-    playTone(1320, 0.25, "sine", 0.18, 0.16);
-    alert(`🎁 +${data.bonus_money.toLocaleString()} ₽`);
-    updateBadges();
-  } catch (e) { alert("Ошибка связи"); }
-}
-
-
-// ================== INIT ==================
-const sb = document.getElementById("soundToggle");
-if (sb) sb.onclick = toggleSound;
-
-auth();
-setInterval(updateBadges, 30000);
+      <span style="font-weight:700;">${m.emoji} ${m.name}</
