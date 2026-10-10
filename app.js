@@ -943,4 +943,75 @@ function showModifierInfo() {
   document.getElementById("infoTitle").textContent = "✨ Модификаторы";
   document.getElementById("infoBody").innerHTML = MODIFIERS_INFO.map(m =>
     `<div style="display:flex;justify-content:space-between;padding:10px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1.5px solid #f0e3c9;">
-      <span style="font-weight:700;">${m.emoji} ${m.name}</
+      <span style="font-weight:700;">${m.emoji} ${m.name}</span>
+      <span style="color:${m.mult >= 1 ? '#16a34a' : '#dc2626'};font-weight:800;">×${m.mult.toFixed(2)}</span>
+    </div>`).join("");
+  document.getElementById("infoModal").classList.remove("hidden");
+}
+
+function closeInfo() { document.getElementById("infoModal").classList.add("hidden"); }
+
+
+// ================== RENDER ==================
+function renderCar(car, highlight = false) {
+  const rc = RARITY_COLORS[car.rarity] || "#9ca3af";
+  const card = document.getElementById("heroCard");
+  card.style.borderColor = rc;
+  card.className = "hero-card" + (car.rarity === "legendary" ? " legendary" : car.rarity === "epic" ? " epic" : "");
+
+  const label = document.getElementById("rarityLabel");
+  label.textContent = car.rarity ? car.rarity.toUpperCase() : "ДОБРО ПОЖАЛОВАТЬ";
+  label.style.color = rc;
+
+  const svg = document.getElementById("heroSvg");
+  svg.innerHTML = carSvg(car, 200);
+  svg.className = "hero-svg " + (highlight ? "pop" : "");
+
+  document.getElementById("heroName").textContent = `${car.brand} ${car.model}`;
+  document.getElementById("heroModifier").innerHTML = car.modifier ? modifierBadge(car) : "";
+  document.getElementById("heroInfo").textContent = car.year ? `📅 ${car.year} | 🎨 ${car.color}` : "";
+  document.getElementById("heroPrice").textContent = car.price ? `💰 ${Math.round(car.price).toLocaleString()} ₽` : "";
+}
+
+function render() {
+  document.getElementById("balance").textContent = Math.round(state.balance).toLocaleString();
+  document.getElementById("tickets").textContent = state.tickets || 0;
+  document.getElementById("level").textContent = state.level || 1;
+  document.getElementById("xp").textContent = state.xp || 0;
+  document.getElementById("xpNext").textContent = state.xpNext || 100;
+  const pct = state.xpNext ? Math.min(100, (state.xp / state.xpNext) * 100) : 0;
+  document.getElementById("xpFill").style.width = pct + "%";
+}
+
+function showXpToast(text) {
+  const t = document.createElement("div");
+  t.className = "xp-toast";
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1500);
+}
+
+
+// ================== БОНУС ==================
+async function claimBonus() {
+  try {
+    const r = await fetch(`${API}/bonus/${user.id}`, { method: "POST" });
+    const data = await r.json();
+    if (!r.ok) { alert(data.detail || "Ошибка"); return; }
+    state.balance = data.new_balance;
+    render();
+    playTone(660, 0.1, "sine", 0.15);
+    playTone(880, 0.1, "sine", 0.15, 0.08);
+    playTone(1320, 0.25, "sine", 0.18, 0.16);
+    alert(`🎁 +${data.bonus_money.toLocaleString()} ₽`);
+    updateBadges();
+  } catch (e) { alert("Ошибка связи"); }
+}
+
+
+// ================== INIT ==================
+const sb = document.getElementById("soundToggle");
+if (sb) sb.onclick = toggleSound;
+
+auth();
+setInterval(updateBadges, 30000);
