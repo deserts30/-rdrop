@@ -21,36 +21,40 @@
   </div>
 
   <div class="hero-card" id="heroCard">
-    <div class="rarity-label" id="rarityLabel">НАЖМИ КРУТИТЬ</div>
-    <div class="hero-svg" id="heroSvg"><div class="placeholder-circle">🚗</div></div>
-    <div class="hero-name" id="heroName"></div>
+    <div class="rarity-label" id="rarityLabel">ДОБРО ПОЖАЛОВАТЬ</div>
+    <div class="hero-svg" id="heroSvg"><div class="placeholder-circle">📦</div></div>
+    <div class="hero-name" id="heroName">Открой первый кейс!</div>
     <div class="hero-modifier" id="heroModifier"></div>
     <div class="hero-info" id="heroInfo"></div>
     <div class="hero-price" id="heroPrice"></div>
   </div>
 
-  <button id="rollBtn" class="main-btn">🎰 КРУТИТЬ <small id="rollCost">30 000 ₽</small></button>
-  <button id="roll5Btn" class="main-btn red-btn">⚡ ×5 КРУТОК <small id="roll5Cost">120 000 ₽</small></button>
-
   <div class="menu-grid">
     <div class="menu-tile" onclick="openGarage()"><div class="menu-icon">🚗</div><div class="menu-label">Гараж</div></div>
     <div class="menu-tile" onclick="openShop()"><div class="menu-icon">📦</div><div class="menu-label">Кейсы</div></div>
-    <div class="menu-tile" onclick="openWheel()"><div class="menu-icon">🎡</div><div class="menu-label">Колесо</div></div>
+    <div class="menu-tile" onclick="openWheel()">
+      <div class="menu-icon">🎡</div><div class="menu-label">Колесо</div>
+      <div class="badge" id="wheelBadge"></div>
+    </div>
     <div class="menu-tile" onclick="openTicketCase()"><div class="menu-icon">🎫</div><div class="menu-label">Билеты</div></div>
     <div class="menu-tile" onclick="openLeaderboard()"><div class="menu-icon">🏆</div><div class="menu-label">Рейтинг</div></div>
     <div class="menu-tile" onclick="showModifierInfo()"><div class="menu-icon">✨</div><div class="menu-label">Редкости</div></div>
-    <div class="menu-tile" onclick="claimBonus()"><div class="menu-icon">🎁</div><div class="menu-label">Бонус</div></div>
-    <div class="menu-tile" onclick="showAbout()"><div class="menu-icon">❓</div><div class="menu-label">Помощь</div></div>
+    <div class="menu-tile" onclick="claimBonus()">
+      <div class="menu-icon">🎁</div><div class="menu-label">Бонус</div>
+      <div class="badge" id="bonusBadge"></div>
+    </div>
+    <div class="menu-tile" onclick="openProfile()"><div class="menu-icon">👤</div><div class="menu-label">Профиль</div></div>
   </div>
 
   <div id="rouletteOverlay" class="roulette-overlay hidden">
-    <div class="roulette-title">🎰 Крутим...</div>
+    <div class="roulette-title" id="rouletteTitle">🎰 Открываем...</div>
     <div class="roulette-window">
       <div class="roulette-track" id="rouletteTrack"></div>
       <div class="roulette-marker"></div>
       <div class="roulette-fade-left"></div>
       <div class="roulette-fade-right"></div>
     </div>
+    <div class="roulette-skip" id="rouletteSkip" onclick="skipRouletteAnim()">Пропустить ➤</div>
   </div>
 
   <div id="garageModal" class="modal hidden"><div class="modal-content">
@@ -69,7 +73,7 @@
 
   <div id="shopModal" class="modal hidden"><div class="modal-content">
     <div class="modal-title">📦 Кейсы</div>
-    <p class="hint">Гарантированная машина внутри</p>
+    <p class="hint">Открывай по 1 или по 5 сразу</p>
     <div id="containersList"></div>
     <button class="close-btn" onclick="closeShop()">Закрыть</button>
   </div></div>
@@ -85,9 +89,7 @@
   <div id="ticketCaseModal" class="modal hidden"><div class="modal-content">
     <div class="modal-title">🎫 Билетный кейс</div>
     <p class="hint">5 билетов за открытие</p>
-    <div style="display:flex;justify-content:center;margin:20px 0;">
-      <div style="font-size:100px;">🎫</div>
-    </div>
+    <div style="display:flex;justify-content:center;margin:20px 0;font-size:100px;">🎫</div>
     <button class="green-full-btn" onclick="openTicketCaseAction()">Открыть за 5 🎫</button>
     <button class="close-btn" onclick="closeTicketCase()">Закрыть</button>
   </div></div>
@@ -99,11 +101,17 @@
     <button class="close-btn" onclick="closeLeaderboard()">Закрыть</button>
   </div></div>
 
+  <div id="profileModal" class="modal hidden"><div class="modal-content">
+    <div class="modal-title">👤 Профиль</div>
+    <div id="profileBody"></div>
+    <button class="close-btn" onclick="closeProfile()">Закрыть</button>
+  </div></div>
+
   <div id="rollResultsModal" class="modal hidden"><div class="modal-content">
-    <div class="modal-title">🎰 Результат ×5</div>
+    <div class="modal-title">🎰 Результат</div>
     <div id="rollResultsList"></div>
     <div id="rollResultsXp" class="results-xp"></div>
-    <button class="green-full-btn" onclick="closeRollResults()">Забрать всё</button>
+    <button class="green-full-btn" onclick="closeRollResults()">Забрать</button>
   </div></div>
 
   <div id="containerResultModal" class="modal hidden"><div class="modal-content">
