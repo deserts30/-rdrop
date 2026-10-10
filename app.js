@@ -714,13 +714,25 @@ function closeContainerResult() { document.getElementById("containerResultModal"
 function openShop() {
   const list = document.getElementById("containersList");
   list.innerHTML = CASES.map(c => `
-    <div class="case-card" onclick="openCase('${c.id}')">
-      <div class="case-visual">${caseSvg(c.id, 70)}</div>
-      <div class="case-info">
-        <b style="color:${c.color};">${c.name}</b>
-        <small>${c.desc}</small>
+    <div class="case-block">
+      <div class="case-head">
+        <div class="case-visual">${caseSvg(c.id, 70)}</div>
+        <div class="case-info">
+          <b style="color:${c.color};">${c.name}</b>
+          <small>${c.desc}</small>
+        </div>
+        <div class="case-price">${c.price.toLocaleString()} ₽</div>
       </div>
-      <div class="case-price">${c.price.toLocaleString()} ₽</div>
+      <div class="case-actions">
+        <button class="case-buy case-buy-x1" onclick="openCase('${c.id}', 1)">
+          Открыть ×1
+          <small>${c.price.toLocaleString()} ₽</small>
+        </button>
+        <button class="case-buy case-buy-x5" onclick="openCase('${c.id}', 5)">
+          Открыть ×5
+          <small>${(c.price * 5).toLocaleString()} ₽</small>
+        </button>
+      </div>
     </div>`).join("");
   document.getElementById("shopModal").classList.remove("hidden");
 }
