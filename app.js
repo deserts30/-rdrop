@@ -19,10 +19,10 @@ const COLOR_HEX = {
 };
 
 const CASES = [
-  { id: "case50",  name: "Обычный кейс",     price: 50000,     color: "#a67c52", desc: "Дешёвые машины" },
-  { id: "case250", name: "Редкий кейс",      price: 250000,    color: "#2563eb", desc: "Средние машины" },
-  { id: "case500", name: "Эпический кейс",   price: 500000,    color: "#7c3aed", desc: "Хорошие машины" },
-  { id: "case1m",  name: "Легендарный кейс", price: 1000000,   color: "#d97706", desc: "Премиум и спорт" },
+  { id: "case50",  name: "Обычный кейс",     price: 50000,   color: "#a67c52", desc: "Дешёвые машины" },
+  { id: "case250", name: "Редкий кейс",      price: 250000,  color: "#2563eb", desc: "Средние машины" },
+  { id: "case500", name: "Эпический кейс",   price: 500000,  color: "#7c3aed", desc: "Хорошие машины" },
+  { id: "case1m",  name: "Легендарный кейс", price: 1000000, color: "#d97706", desc: "Премиум и спорт" },
 ];
 
 const UPGRADE_PARTS_META = [
@@ -61,29 +61,41 @@ const MODIFIERS_INFO = [
 ];
 
 
-// ================== ЗВУК ==================
+// ================== ЗВУК + МУЗЫКА ==================
 let audioCtx = null;
 let soundEnabled = localStorage.getItem("soundEnabled") !== "false";
 let audioUnlocked = false;
+let musicTimer = null;
+let musicStep = 0;
 
 function getAudioCtx() {
-  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { return null; }
+  }
   if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
   return audioCtx;
 }
 
 function unlockAudio() {
-  if (audioUnlocked) return;
   const ctx = getAudioCtx();
   if (!ctx) return;
-  try {
-    const b = ctx.createBuffer(1, 1, 22050);
-    const s = ctx.createBufferSource();
-    s.buffer = b; s.connect(ctx.destination); s.start(0);
-  } catch (e) {}
-  audioUnlocked = true;
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  if (!audioUnlocked) {
+    try {
+      const b = ctx.createBuffer(1, 1, 22050);
+      const s = ctx.createBufferSource();
+      s.buffer = b; s.connect(ctx.destination); s.start(0);
+    } catch (e) {}
+    audioUnlocked = true;
+  }
+  if (soundEnabled && !musicTimer) startMusic();
 }
-["touchstart","touchend","click","mousedown"].forEach(e => document.addEventListener(e, unlockAudio, { once: true, passive: true }));
+
+// Разблокировка аудио при каждом тапе
+["touchstart","touchend","click","mousedown"].forEach(e =>
+  document.addEventListener(e, unlockAudio, { passive: true })
+);
 
 function playTone(freq, dur, type = "sine", vol = 0.15, delay = 0) {
   if (!soundEnabled) return;
@@ -114,18 +126,6 @@ function playTick() {
   } catch (e) {}
 }
 
-function playSpinSound(duration = 4000) {
-  const start = performance.now();
-  const tick = () => {
-    const elapsed = performance.now() - start;
-    if (elapsed >= duration) return;
-    playTick();
-    const p = elapsed / duration;
-    setTimeout(tick, 45 + Math.pow(p, 2.8) * 380);
-  };
-  tick();
-}
-
 function playRewardSound(rarity, special = false) {
   if (special) {
     [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => playTone(f, 0.15, "triangle", 0.2, i * 0.1));
@@ -149,17 +149,86 @@ function playRewardSound(rarity, special = false) {
   }
 }
 
+// ================== ФОНОВАЯ МУЗЫКА ==================
+const MUSIC_CHORDS = [
+  { bass: 110.00, notes: [220.00, 261.63, 329.63] },  // Am
+  { bass: 87.31,  notes: [174.61, 220.00, 261.63] },  // F
+  { bass: 130.81, notes: [261.63, 329.63, 392.00] },  // C
+  { bass: 98.00,  notes: [196.00, 246.94, 293.66] },  // G
+];
+
+function playMusicChord(chord) {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+
+  // Бас
+  try {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = chord.bass;
+    o.connect(g); g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.10, t + 0.05);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.8);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+    o.start(t); o.stop(t + 2.0);
+  } catch (e) {}
+
+  // Аккорд
+  chord.notes.forEach((f, i) => {
+    try {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.08;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.4);
+      g.gain.linearRampToValueAtTime(0.05, t + 1.5);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 2.4);
+      o.start(t); o.stop(t + 2.6);
+    } catch (e) {}
+  });
+}
+
+function startMusic() {
+  if (musicTimer) return;
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  musicStep = 0;
+  playMusicChord(MUSIC_CHORDS[0]);
+  musicStep = 1;
+  const loop = () => {
+    if (!soundEnabled) { musicTimer = null; return; }
+    playMusicChord(MUSIC_CHORDS[musicStep % MUSIC_CHORDS.length]);
+    musicStep++;
+    musicTimer = setTimeout(loop, 2400);
+  };
+  musicTimer = setTimeout(loop, 2400);
+}
+
+function stopMusic() {
+  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+}
+
 function updateSoundUI() {
   const b = document.getElementById("soundToggle");
   if (!b) return;
   b.textContent = soundEnabled ? "🔊" : "🔇";
   b.classList.toggle("off", !soundEnabled);
 }
+
 function toggleSound() {
   soundEnabled = !soundEnabled;
   localStorage.setItem("soundEnabled", soundEnabled);
   updateSoundUI();
-  if (soundEnabled) { unlockAudio(); playTone(660, 0.1, "sine", 0.15); }
+  if (soundEnabled) {
+    unlockAudio();
+    if (!musicTimer) startMusic();
+    playTone(660, 0.1, "sine", 0.15);
+  } else {
+    stopMusic();
+  }
 }
 
 
@@ -203,43 +272,31 @@ function carSvg(car, size = 220) {
     body = `
       <path d="M 28 92 L 48 62 L 90 55 L 130 55 L 172 62 L 192 92 L 192 110 L 28 110 Z" fill="${bodyColor}" stroke="#1a1a1a" stroke-width="1.8"/>
       <path d="M 58 90 L 76 66 L 130 66 L 146 90 Z" fill="url(#glass_${uid})" opacity="0.9"/>
-      <line x1="90" y1="66" x2="90" y2="90" stroke="#1a1a1a" stroke-width="1" opacity="0.5"/>
       <rect x="34" y="94" width="10" height="6" rx="1.5" fill="#fbbf24" stroke="#78350f" stroke-width="0.8"/>
-      <rect x="176" y="94" width="10" height="6" rx="1.5" fill="#fff" stroke="#666" stroke-width="0.8"/>
-      <rect x="36" y="100" width="152" height="2" fill="#000" opacity="0.15"/>
-      <rect x="180" y="88" width="10" height="4" rx="1" fill="#dc2626"/>`;
+      <rect x="176" y="94" width="10" height="6" rx="1.5" fill="#fff" stroke="#666" stroke-width="0.8"/>`;
   } else if (rarity === "rare") {
     body = `
       <path d="M 22 98 L 52 72 L 100 62 L 148 62 L 188 76 L 198 98 L 198 112 L 22 112 Z" fill="${bodyColor}" stroke="#1a1a1a" stroke-width="1.8"/>
       <path d="M 62 94 L 84 72 L 138 72 L 154 94 Z" fill="url(#glass_${uid})" opacity="0.9"/>
-      <line x1="100" y1="72" x2="100" y2="94" stroke="#1a1a1a" stroke-width="1" opacity="0.5"/>
       <rect x="18" y="90" width="18" height="4" rx="1" fill="#111"/>
       <rect x="24" y="94" width="3" height="12" fill="#111"/>
-      <rect x="186" y="92" width="12" height="5" rx="2" fill="#fff" stroke="#666" stroke-width="0.8"/>
-      <rect x="30" y="100" width="150" height="2" fill="#000" opacity="0.2"/>`;
+      <rect x="186" y="92" width="12" height="5" rx="2" fill="#fff" stroke="#666" stroke-width="0.8"/>`;
   } else if (rarity === "epic") {
     body = `
       <path d="M 18 102 L 54 76 L 106 64 L 152 64 L 196 80 L 202 102 L 202 115 L 18 115 Z" fill="${bodyColor}" stroke="#1a1a1a" stroke-width="1.8"/>
       <path d="M 68 98 L 94 74 L 142 74 L 158 98 Z" fill="url(#glass_${uid})" opacity="0.9"/>
-      <line x1="108" y1="74" x2="108" y2="98" stroke="#1a1a1a" stroke-width="1" opacity="0.5"/>
       <rect x="16" y="86" width="22" height="5" rx="1" fill="#111"/>
       <rect x="22" y="91" width="3" height="14" fill="#111"/>
-      <path d="M 190 86 L 202 90 L 202 96 L 190 92 Z" fill="#fff" stroke="#666" stroke-width="0.8"/>
-      <circle cx="30" cy="105" r="3" fill="#dc2626"/>
-      <rect x="25" y="102" width="145" height="2" fill="#000" opacity="0.2"/>`;
+      <path d="M 190 86 L 202 90 L 202 96 L 190 92 Z" fill="#fff" stroke="#666" stroke-width="0.8"/>`;
   } else {
     body = `
       <path d="M 14 106 L 54 78 L 112 64 L 162 66 L 200 84 L 206 106 L 206 118 L 14 118 Z" fill="${bodyColor}" stroke="#1a1a1a" stroke-width="1.8"/>
       <path d="M 74 102 L 106 76 L 146 76 L 162 102 Z" fill="url(#glass_${uid})" opacity="0.95"/>
-      <line x1="118" y1="76" x2="118" y2="102" stroke="#1a1a1a" stroke-width="1" opacity="0.5"/>
       <rect x="10" y="82" width="32" height="6" rx="2" fill="#111"/>
       <rect x="20" y="88" width="4" height="16" fill="#111"/>
-      <circle cx="20" cy="106" r="3.5" fill="#f59e0b"/>
-      <path d="M 192 90 L 206 94 L 206 100 L 192 96 Z" fill="#fff" stroke="#666" stroke-width="0.8"/>
-      <rect x="20" y="106" width="160" height="2" fill="#000" opacity="0.25"/>`;
+      <circle cx="20" cy="106" r="3.5" fill="#f59e0b"/>`;
   }
 
-  // Двери и ручки для детализации
   const details = `
     <line x1="88" y1="70" x2="88" y2="108" stroke="#000" stroke-width="0.6" opacity="0.4"/>
     <line x1="140" y1="70" x2="140" y2="108" stroke="#000" stroke-width="0.6" opacity="0.4"/>
@@ -250,61 +307,27 @@ function carSvg(car, size = 220) {
     <circle cx="68" cy="112" r="15" fill="#1a1a1a"/>
     <circle cx="68" cy="112" r="10" fill="#333"/>
     <circle cx="68" cy="112" r="5" fill="#888"/>
-    <line x1="68" y1="102" x2="68" y2="122" stroke="#666" stroke-width="0.8"/>
-    <line x1="58" y1="112" x2="78" y2="112" stroke="#666" stroke-width="0.8"/>
     <circle cx="162" cy="112" r="15" fill="#1a1a1a"/>
     <circle cx="162" cy="112" r="10" fill="#333"/>
-    <circle cx="162" cy="112" r="5" fill="#888"/>
-    <line x1="162" y1="102" x2="162" y2="122" stroke="#666" stroke-width="0.8"/>
-    <line x1="152" y1="112" x2="172" y2="112" stroke="#666" stroke-width="0.8"/>`;
+    <circle cx="162" cy="112" r="5" fill="#888"/>`;
 
-  // Дефекты
   let defects = "";
   if (modifier === "Ржавая") {
-    defects = `
-      <circle cx="55" cy="80" r="6" fill="#6b3410" opacity="0.8"/>
-      <circle cx="118" cy="75" r="5" fill="#6b3410" opacity="0.7"/>
-      <circle cx="160" cy="98" r="7" fill="#6b3410" opacity="0.8"/>
-      <circle cx="85" cy="102" r="4" fill="#6b3410" opacity="0.6"/>
-      <circle cx="140" cy="88" r="5" fill="#6b3410" opacity="0.7"/>
-      <circle cx="100" cy="85" r="3" fill="#8B4513" opacity="0.5"/>`;
+    defects = `<circle cx="55" cy="80" r="6" fill="#6b3410" opacity="0.8"/><circle cx="118" cy="75" r="5" fill="#6b3410" opacity="0.7"/><circle cx="160" cy="98" r="7" fill="#6b3410" opacity="0.8"/><circle cx="85" cy="102" r="4" fill="#6b3410" opacity="0.6"/>`;
   } else if (modifier === "Мятая") {
-    defects = `
-      <path d="M 42 62 L 54 70 L 48 78 L 60 84" stroke="#000" stroke-width="2.5" fill="none" opacity="0.6"/>
-      <path d="M 138 65 L 150 73 L 143 82" stroke="#000" stroke-width="2.5" fill="none" opacity="0.6"/>
-      <path d="M 90 55 L 100 62 L 94 70" stroke="#000" stroke-width="2" fill="none" opacity="0.5"/>`;
+    defects = `<path d="M 42 62 L 54 70 L 48 78 L 60 84" stroke="#000" stroke-width="2.5" fill="none" opacity="0.6"/><path d="M 138 65 L 150 73 L 143 82" stroke="#000" stroke-width="2.5" fill="none" opacity="0.6"/>`;
   } else if (modifier === "Царапанная") {
-    defects = `
-      <line x1="52" y1="70" x2="76" y2="98" stroke="#fff" stroke-width="1.2" opacity="0.7"/>
-      <line x1="58" y1="70" x2="82" y2="98" stroke="#fff" stroke-width="1" opacity="0.5"/>
-      <line x1="120" y1="75" x2="148" y2="100" stroke="#fff" stroke-width="1.2" opacity="0.7"/>
-      <line x1="126" y1="78" x2="154" y2="103" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
+    defects = `<line x1="52" y1="70" x2="76" y2="98" stroke="#fff" stroke-width="1.2" opacity="0.7"/><line x1="58" y1="70" x2="82" y2="98" stroke="#fff" stroke-width="1" opacity="0.5"/><line x1="120" y1="75" x2="148" y2="100" stroke="#fff" stroke-width="1.2" opacity="0.7"/>`;
   } else if (modifier === "Грязная") {
-    defects = `
-      <ellipse cx="72" cy="106" rx="22" ry="6" fill="#4a3520" opacity="0.5"/>
-      <ellipse cx="162" cy="108" rx="16" ry="5" fill="#4a3520" opacity="0.5"/>
-      <circle cx="100" cy="76" r="9" fill="#4a3520" opacity="0.3"/>
-      <circle cx="55" cy="88" r="7" fill="#4a3520" opacity="0.35"/>`;
+    defects = `<ellipse cx="72" cy="106" rx="22" ry="6" fill="#4a3520" opacity="0.5"/><ellipse cx="162" cy="108" rx="16" ry="5" fill="#4a3520" opacity="0.5"/><circle cx="100" cy="76" r="9" fill="#4a3520" opacity="0.3"/>`;
   } else if (modifier === "Граффити") {
-    defects = `
-      <text x="65" y="88" font-size="16" font-weight="bold" fill="#ec4899" opacity="0.85" font-family="Arial" transform="rotate(-5 65 88)">A$AP</text>
-      <text x="140" y="106" font-size="11" font-weight="bold" fill="#22d3ee" opacity="0.85" font-family="Arial">420</text>`;
+    defects = `<text x="65" y="88" font-size="16" font-weight="bold" fill="#ec4899" opacity="0.85" font-family="Arial">A$AP</text>`;
   } else if (modifier === "Ухоженная") {
-    defects = `
-      <circle cx="48" cy="66" r="3.5" fill="#fff" opacity="0.95"/>
-      <circle cx="95" cy="60" r="2.5" fill="#fff" opacity="0.95"/>
-      <circle cx="148" cy="63" r="3" fill="#fff" opacity="0.95"/>
-      <circle cx="170" cy="95" r="2" fill="#fff" opacity="0.8"/>`;
+    defects = `<circle cx="48" cy="66" r="3.5" fill="#fff" opacity="0.95"/><circle cx="95" cy="60" r="2.5" fill="#fff" opacity="0.95"/><circle cx="148" cy="63" r="3" fill="#fff" opacity="0.95"/>`;
   } else if (modifier === "Эксклюзивная") {
-    defects = `
-      <path d="M 48 54 L 54 62 L 46 70" stroke="#fbbf24" stroke-width="2" fill="none"/>
-      <circle cx="100" cy="56" r="2.5" fill="#fbbf24"/>
-      <circle cx="150" cy="56" r="2" fill="#fbbf24"/>`;
+    defects = `<path d="M 48 54 L 54 62 L 46 70" stroke="#fbbf24" stroke-width="2" fill="none"/><circle cx="100" cy="56" r="2.5" fill="#fbbf24"/>`;
   } else if (modifier === "Юбилейная №1" || modifier === "Коллекционная") {
-    defects = `
-      <text x="115" y="82" font-size="24" font-weight="bold" fill="#fbbf24" font-family="Arial" text-anchor="middle">№1</text>
-      <circle cx="105" cy="58" r="3.5" fill="#fbbf24"/>
-      <circle cx="128" cy="58" r="2.5" fill="#fbbf24"/>`;
+    defects = `<text x="115" y="82" font-size="24" font-weight="bold" fill="#fbbf24" font-family="Arial" text-anchor="middle">№1</text><circle cx="105" cy="58" r="3.5" fill="#fbbf24"/>`;
   }
 
   return `
@@ -363,7 +386,41 @@ async function auth() {
     if (!state.cars) state.cars = [];
     render();
     updateSoundUI();
+    if (state.cars && state.cars.length) {
+      const last = state.cars[state.cars.length - 1];
+      renderCar(last, false);
+    }
+    updateBadges();
   } catch (e) { console.log("Backend error", e); }
+}
+
+
+// ================== БЕЙДЖИ ==================
+async function updateBadges() {
+  try {
+    const r = await fetch(`${API}/wheel/${user.id}`);
+    const data = await r.json();
+    const b = document.getElementById("wheelBadge");
+    if (data.available) {
+      b.textContent = "✓";
+      b.className = "badge green show";
+    } else {
+      const m = Math.floor(data.remaining_seconds / 60);
+      if (m > 0) { b.textContent = m + "м"; b.className = "badge show"; }
+      else b.className = "badge";
+    }
+  } catch (e) {}
+
+  const now = new Date();
+  const bonusBadge = document.getElementById("bonusBadge");
+  if (state.last_bonus) {
+    const delta = (now - new Date(state.last_bonus)) / 1000;
+    if (delta < 24 * 3600) bonusBadge.className = "badge";
+    else { bonusBadge.textContent = "✓"; bonusBadge.className = "badge green show"; }
+  } else {
+    bonusBadge.textContent = "✓";
+    bonusBadge.className = "badge green show";
+  }
 }
 
 
@@ -423,7 +480,6 @@ function showRoulette(winner) {
     _rouletteSkipFn = finish;
     if (skipBtn) skipBtn.onclick = finish;
 
-    // Звук крутки с возможностью прервать
     const startTime = performance.now();
     const tickLoop = () => {
       if (finished) return;
@@ -444,51 +500,7 @@ function showRoulette(winner) {
 }
 
 
-// ================== КРУТКИ ==================
-async function roll() {
-  const btn = document.getElementById("rollBtn");
-  btn.disabled = true;
-  try {
-    const r = await fetch(`${API}/roll/${user.id}`, { method: "POST" });
-    const data = await r.json();
-    if (!r.ok) { alert(data.detail || "Ошибка"); return; }
-    await showRoulette(data.car);
-    state.balance = data.balance;
-    state.cars.push(data.car);
-    if (data.level !== undefined) state.level = data.level;
-    if (data.xp !== undefined) state.xp = data.xp;
-    if (data.xp_next !== undefined) state.xpNext = data.xp_next;
-    renderCar(data.car, true);
-    render();
-    if (data.xp_gained) showXpToast(`+${data.xp_gained} XP`);
-  } catch (e) { alert("Ошибка связи"); }
-  finally { btn.disabled = false; }
-}
-
-async function roll5() {
-  const btn = document.getElementById("roll5Btn");
-  btn.disabled = true;
-  try {
-    const r = await fetch(`${API}/roll5/${user.id}`, { method: "POST" });
-    const data = await r.json();
-    if (!r.ok) { alert(data.detail || "Ошибка"); return; }
-    state.balance = data.balance;
-    if (data.level !== undefined) state.level = data.level;
-    if (data.xp !== undefined) state.xp = data.xp;
-    if (data.xp_next !== undefined) state.xpNext = data.xp_next;
-    data.cars.forEach(c => state.cars.push(c));
-    if (data.cars.length) renderCar(data.cars[data.cars.length - 1], true);
-    render();
-    showRollResults(data.cars, data.xp_gained);
-    const rank = { common: 1, rare: 2, epic: 3, legendary: 4 };
-    let best = "common";
-    for (const c of data.cars) if (rank[c.rarity] > rank[best]) best = c.rarity;
-    playRewardSound(best, false);
-    if (data.xp_gained) showXpToast(`+${data.xp_gained} XP`);
-  } catch (e) { alert("Ошибка связи"); }
-  finally { btn.disabled = false; }
-}
-
+// ================== КЕЙСЫ ==================
 async function openCase(caseId, count = 1) {
   const c = CASES.find(x => x.id === caseId);
   const total = c.price * count;
@@ -498,7 +510,6 @@ async function openCase(caseId, count = 1) {
     const data = await r.json();
     if (!r.ok) { alert(data.detail || "Ошибка"); return; }
 
-    // Рулетка только для 1 кейса. Для ×5 — сразу результат.
     if (count === 1) {
       await showRoulette(data.car);
     }
@@ -534,7 +545,6 @@ function openUpgrade(carId) {
 function renderUpgradeModal() {
   const car = state.cars.find(c => c.id === currentUpgradeCarId);
   if (!car) return;
-
   document.getElementById("upgradeCarInfo").innerHTML = `
     <div style="background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;border:1.5px solid #f0e3c9;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -550,7 +560,6 @@ function renderUpgradeModal() {
         </div>
       </div>
     </div>`;
-
   let html = "";
   UPGRADE_PARTS_META.forEach(p => {
     const lvl = car[p.id + "_lvl"] || 0;
@@ -558,12 +567,8 @@ function renderUpgradeModal() {
     const cost = Math.round(car.base_price * UPGRADE_COST_PCT[lvl]);
     const chance = UPGRADE_CHANCES[lvl];
     const nextMult = maxed ? null : PART_MULTS[lvl + 1];
-
     let segs = "";
-    for (let i = 0; i < 4; i++) {
-      segs += `<div class="upg-bar-seg ${i < lvl ? 'filled' : ''}"></div>`;
-    }
-
+    for (let i = 0; i < 4; i++) segs += `<div class="upg-bar-seg ${i < lvl ? 'filled' : ''}"></div>`;
     html += `
       <div class="upgrade-part-row">
         <div class="upg-head">
@@ -573,9 +578,7 @@ function renderUpgradeModal() {
         <div class="upg-bar">${segs}</div>
         ${maxed
           ? `<button class="upg-btn-full" disabled>МАКСИМУМ</button>`
-          : `<button class="upg-btn-full" onclick="doUpgrade('${p.id}')">
-              Прокачать до ×${nextMult} • ${chance}% • ${cost.toLocaleString()} ₽
-            </button>`
+          : `<button class="upg-btn-full" onclick="doUpgrade('${p.id}')">Прокачать до ×${nextMult} • ${chance}% • ${cost.toLocaleString()} ₽</button>`
         }
       </div>`;
   });
@@ -587,14 +590,11 @@ async function doUpgrade(part) {
     const r = await fetch(`${API}/upgrade/${user.id}/${currentUpgradeCarId}/${part}`, { method: "POST" });
     const data = await r.json();
     if (!r.ok) { alert(data.detail || "Ошибка"); return; }
-
     state.balance = data.balance;
     const idx = state.cars.findIndex(c => c.id === currentUpgradeCarId);
     if (idx >= 0) state.cars[idx] = data.car;
-
     render();
     renderUpgradeModal();
-
     if (data.success) {
       playRewardSound("epic", false);
       alert(`✅ Успех! ${part} → ×${PART_MULTS[data.new_level]}`);
@@ -673,27 +673,7 @@ function closeGarage() { document.getElementById("garageModal").classList.add("h
 
 
 // ================== РЕЗУЛЬТАТЫ ==================
-function showRollResults(cars, totalXp) {
-  const list = document.getElementById("rollResultsList");
-  const xpEl = document.getElementById("rollResultsXp");
-  list.innerHTML = cars.map(c => {
-    const rc = RARITY_COLORS[c.rarity];
-    return `<div style="padding:10px;margin-bottom:8px;border-radius:12px;background:#fff;border-left:4px solid ${rc};border:1.5px solid #f0e3c9;display:flex;justify-content:space-between;align-items:center;gap:10px;">
-      <div style="flex-shrink:0;">${carSvg(c, 85)}</div>
-      <div style="flex:1;text-align:right;">
-        <b>${c.brand} ${c.model}</b><br>
-        <small style="color:#a1a1aa;">${c.year} • ${c.color}</small><br>
-        <small style="color:${rc};font-size:10px;font-weight:800;">${c.rarity.toUpperCase()}</small><br>
-        ${modifierBadge(c)}<br>
-        <span style="color:#16a34a;font-weight:800;font-size:13px;">${Math.round(c.price).toLocaleString()} ₽</span>
-      </div></div>`;
-  }).join("");
-  xpEl.textContent = `+${totalXp} XP`;
-  document.getElementById("rollResultsModal").classList.remove("hidden");
-}
-function closeRollResults() { document.getElementById("rollResultsModal").classList.add("hidden"); }
-
-function showContainerResult(car, special) {
+function showContainerResult(car) {
   const box = document.getElementById("containerResultBox");
   const rc = RARITY_COLORS[car.rarity];
   box.innerHTML = `
@@ -708,6 +688,24 @@ function showContainerResult(car, special) {
   document.getElementById("containerResultModal").classList.remove("hidden");
 }
 function closeContainerResult() { document.getElementById("containerResultModal").classList.add("hidden"); }
+
+function showRollResults(cars, totalXp) {
+  const list = document.getElementById("rollResultsList");
+  list.innerHTML = cars.map(c => {
+    const rc = RARITY_COLORS[c.rarity];
+    return `<div style="padding:10px;margin-bottom:8px;border-radius:12px;background:#fff;border-left:4px solid ${rc};border:1.5px solid #f0e3c9;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <div style="flex-shrink:0;">${carSvg(c, 85)}</div>
+      <div style="flex:1;text-align:right;">
+        <b>${c.brand} ${c.model}</b><br>
+        <small style="color:#a1a1aa;">${c.year} • ${c.color}</small><br>
+        ${modifierBadge(c)}<br>
+        <span style="color:#16a34a;font-weight:800;font-size:13px;">${Math.round(c.price).toLocaleString()} ₽</span>
+      </div></div>`;
+  }).join("");
+  document.getElementById("rollResultsXp").textContent = `+${totalXp} XP`;
+  document.getElementById("rollResultsModal").classList.remove("hidden");
+}
+function closeRollResults() { document.getElementById("rollResultsModal").classList.add("hidden"); }
 
 
 // ================== МЕНЮ ==================
@@ -756,7 +754,6 @@ function wheelSvg(size = 260) {
   const n = WHEEL_SECTORS.length;
   const angle = 360 / n;
   const cx = size / 2, cy = size / 2, r = size / 2 - 6;
-
   let paths = "";
   WHEEL_SECTORS.forEach((s, i) => {
     const a1 = (i * angle - 90) * Math.PI / 180;
@@ -770,7 +767,6 @@ function wheelSvg(size = 260) {
     const tx2 = cx + (r * 0.65) * Math.cos(midA), ty2 = cy + (r * 0.65) * Math.sin(midA) + 18;
     paths += `<text x="${tx2}" y="${ty2}" text-anchor="middle" font-size="10" font-weight="bold" fill="#fff" font-family="Arial">${s.label}</text>`;
   });
-
   return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" stroke="#78350f" stroke-width="4"/>
     ${paths}
@@ -813,19 +809,14 @@ async function spinWheel() {
     const r = await fetch(`${API}/wheel/${user.id}`, { method: "POST" });
     const data = await r.json();
     if (!r.ok) { alert(data.detail || "Ошибка"); btn.disabled = false; return; }
-
     const randomSector = Math.floor(Math.random() * WHEEL_SECTORS.length);
     const sectorAngle = 360 / WHEEL_SECTORS.length;
-    const targetAngle = 360 * 6 + (360 - randomSector * sectorAngle);
-    wheelRotation += targetAngle;
-
+    wheelRotation += 360 * 6 + (360 - randomSector * sectorAngle);
     const wrap = document.getElementById("wheelSvgWrap");
     if (wrap) {
       wrap.style.transition = "transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)";
       wrap.style.transform = `rotate(${wheelRotation}deg)`;
     }
-
-    playSpinSound(4000);
     setTimeout(() => {
       state.balance = data.balance;
       state.tickets = data.tickets;
@@ -833,6 +824,7 @@ async function spinWheel() {
       playRewardSound("legendary", false);
       alert(`🎁 ${data.result_text}`);
       refreshWheelState();
+      updateBadges();
     }, 4200);
   } catch (e) { alert("Ошибка связи"); btn.disabled = false; }
 }
@@ -886,6 +878,58 @@ async function openLeaderboard() {
 function closeLeaderboard() { document.getElementById("leaderboardModal").classList.add("hidden"); }
 
 
+// ================== ПРОФИЛЬ ==================
+function openProfile() {
+  document.getElementById("profileModal").classList.remove("hidden");
+  renderProfile();
+}
+function closeProfile() { document.getElementById("profileModal").classList.add("hidden"); }
+
+function renderProfile() {
+  const body = document.getElementById("profileBody");
+  const totalValue = state.cars.reduce((s, c) => s + c.price, 0);
+  const bestCar = state.cars.length ? state.cars.reduce((a, b) => a.price > b.price ? a : b) : null;
+  const byRarity = { common: 0, rare: 0, epic: 0, legendary: 0 };
+  state.cars.forEach(c => byRarity[c.rarity] = (byRarity[c.rarity] || 0) + 1);
+
+  body.innerHTML = `
+    <div style="text-align:center;padding:16px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:16px;margin-bottom:14px;border:1.5px solid #f59e0b;">
+      <div style="font-size:40px;">👤</div>
+      <div style="font-weight:800;color:#78350f;font-size:17px;margin-top:6px;">${user.username || 'Игрок'}</div>
+      <div style="color:#92400e;font-size:12px;margin-top:2px;">🏆 Уровень ${state.level}</div>
+    </div>
+
+    <div class="profile-stat"><span>💰 Баланс</span><b>${Math.round(state.balance).toLocaleString()} ₽</b></div>
+    <div class="profile-stat"><span>🎫 Билеты</span><b>${state.tickets || 0}</b></div>
+    <div class="profile-stat"><span>📊 Опыт</span><b>${state.xp} / ${state.xpNext}</b></div>
+    <div class="profile-stat"><span>🚗 Машин в гараже</span><b>${state.cars.length}</b></div>
+    <div class="profile-stat"><span>💎 Стоимость гаража</span><b>${Math.round(totalValue).toLocaleString()} ₽</b></div>
+    <div class="profile-stat"><span>🎯 Всего выбито</span><b>${state.total_cars_obtained || 0}</b></div>
+
+    <div style="margin-top:12px;font-weight:800;color:#78350f;font-size:14px;">📊 По редкости:</div>
+    <div class="profile-stat"><span>🚗 Обычные</span><b>${byRarity.common}</b></div>
+    <div class="profile-stat"><span>💙 Редкие</span><b>${byRarity.rare}</b></div>
+    <div class="profile-stat"><span>💜 Эпические</span><b>${byRarity.epic}</b></div>
+    <div class="profile-stat"><span>🟡 Легендарные</span><b>${byRarity.legendary}</b></div>
+
+    ${bestCar ? `
+      <div style="margin-top:12px;font-weight:800;color:#78350f;font-size:14px;">🏅 Лучшая машина:</div>
+      <div style="background:#fff;border-radius:14px;padding:12px;margin-top:6px;border:1.5px solid #f0e3c9;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="flex-shrink:0;">${carSvg(bestCar, 80)}</div>
+          <div style="flex:1;text-align:right;">
+            <b>${bestCar.brand} ${bestCar.model}</b><br>
+            <small style="color:#a1a1aa;">${bestCar.year} • ${bestCar.color}</small><br>
+            ${modifierBadge(bestCar)}
+            <div style="color:#16a34a;font-weight:800;margin-top:4px;">💰 ${Math.round(bestCar.price).toLocaleString()} ₽</div>
+          </div>
+        </div>
+      </div>
+    ` : ""}
+  `;
+}
+
+
 // ================== ИНФО ==================
 function showModifierInfo() {
   document.getElementById("infoTitle").textContent = "✨ Модификаторы";
@@ -897,31 +941,18 @@ function showModifierInfo() {
   document.getElementById("infoModal").classList.remove("hidden");
 }
 
-function showAbout() {
-  document.getElementById("infoTitle").textContent = "❓ О игре";
-  document.getElementById("infoBody").innerHTML = `<p style="color:#78756c;font-size:13px;line-height:1.6;">
-    <b>Выбивание машин</b><br><br>
-    • Крути рулетку за 30 000 ₽<br>
-    • Открывай кейсы (50К–1М)<br>
-    • Колесо удачи раз в 30 мин<br>
-    • Копи 🎫 билеты<br>
-    • Прокачивай машины (🔧 Апгрейд)<br>
-    • Продавай дубликаты<br>
-    • Поднимайся в топ
-  </p>`;
-  document.getElementById("infoModal").classList.remove("hidden");
-}
 function closeInfo() { document.getElementById("infoModal").classList.add("hidden"); }
 
 
 // ================== RENDER ==================
 function renderCar(car, highlight = false) {
   const rc = RARITY_COLORS[car.rarity] || "#9ca3af";
-  document.getElementById("heroCard").style.borderColor = rc;
-  document.getElementById("heroCard").style.boxShadow = highlight ? `0 8px 40px ${rc}55` : "0 8px 30px rgba(180, 140, 60, 0.15)";
+  const card = document.getElementById("heroCard");
+  card.style.borderColor = rc;
+  card.className = "hero-card" + (car.rarity === "legendary" ? " legendary" : car.rarity === "epic" ? " epic" : "");
 
   const label = document.getElementById("rarityLabel");
-  label.textContent = car.rarity ? car.rarity.toUpperCase() : "НАЖМИ КРУТИТЬ";
+  label.textContent = car.rarity ? car.rarity.toUpperCase() : "ДОБРО ПОЖАЛОВАТЬ";
   label.style.color = rc;
 
   const svg = document.getElementById("heroSvg");
@@ -965,14 +996,14 @@ async function claimBonus() {
     playTone(880, 0.1, "sine", 0.15, 0.08);
     playTone(1320, 0.25, "sine", 0.18, 0.16);
     alert(`🎁 +${data.bonus_money.toLocaleString()} ₽`);
+    updateBadges();
   } catch (e) { alert("Ошибка связи"); }
 }
 
 
 // ================== INIT ==================
-document.getElementById("rollBtn").onclick = roll;
-document.getElementById("roll5Btn").onclick = roll5;
 const sb = document.getElementById("soundToggle");
 if (sb) sb.onclick = toggleSound;
 
 auth();
+setInterval(updateBadges, 30000);
