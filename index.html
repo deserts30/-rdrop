@@ -46,15 +46,19 @@
     <div class="menu-tile" onclick="openProfile()"><div class="menu-icon">👤</div><div class="menu-label">Профиль</div></div>
   </div>
 
-  <div id="rouletteOverlay" class="roulette-overlay hidden">
-    <div class="roulette-title" id="rouletteTitle">🎰 Открываем...</div>
-    <div class="roulette-window">
-      <div class="roulette-track" id="rouletteTrack"></div>
-      <div class="roulette-marker"></div>
-      <div class="roulette-fade-left"></div>
-      <div class="roulette-fade-right"></div>
+  <!-- ОВЕРЛЕЙ ОТКРЫТИЯ КЕЙСА -->
+  <div id="caseOpenOverlay" class="case-open-overlay hidden">
+    <div class="case-glow" id="caseGlow"></div>
+    <div class="case-flash" id="caseFlash"></div>
+    <div class="case-rays" id="caseRays"></div>
+
+    <div class="case-scene" id="caseScene">
+      <div class="case-svg-holder" id="caseSvgHolder"></div>
     </div>
-    <div class="roulette-skip" id="rouletteSkip" onclick="skipRouletteAnim()">Пропустить ➤</div>
+
+    <div class="case-result hidden" id="caseResult"></div>
+
+    <div class="case-skip" id="caseSkip">Пропустить ➤</div>
   </div>
 
   <div id="garageModal" class="modal hidden"><div class="modal-content">
@@ -108,16 +112,10 @@
   </div></div>
 
   <div id="rollResultsModal" class="modal hidden"><div class="modal-content">
-    <div class="modal-title">🎰 Результат</div>
+    <div class="modal-title">🎰 Результат ×5</div>
     <div id="rollResultsList"></div>
     <div id="rollResultsXp" class="results-xp"></div>
-    <button class="green-full-btn" onclick="closeRollResults()">Забрать</button>
-  </div></div>
-
-  <div id="containerResultModal" class="modal hidden"><div class="modal-content">
-    <div class="modal-title">📦 Открыт кейс</div>
-    <div id="containerResultBox"></div>
-    <button class="green-full-btn" onclick="closeContainerResult()">Забрать</button>
+    <button class="green-full-btn" onclick="closeRollResults()">Забрать всё</button>
   </div></div>
 
   <div id="infoModal" class="modal hidden"><div class="modal-content">
