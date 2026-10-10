@@ -489,21 +489,34 @@ async function roll5() {
   finally { btn.disabled = false; }
 }
 
-async function openCase(caseId) {
+async function openCase(caseId, count = 1) {
   const c = CASES.find(x => x.id === caseId);
-  if (!confirm(`Открыть «${c.name}» за ${c.price.toLocaleString()} ₽?`)) return;
+  const total = c.price * count;
+  if (!confirm(`Открыть «${c.name}» ×${count} за ${total.toLocaleString()} ₽?`)) return;
   try {
-    const r = await fetch(`${API}/case/${user.id}/${caseId}`, { method: "POST" });
+    const r = await fetch(`${API}/case/${user.id}/${caseId}?count=${count}`, { method: "POST" });
     const data = await r.json();
     if (!r.ok) { alert(data.detail || "Ошибка"); return; }
-    await showRoulette(data.car);
+
+    // Рулетка только для 1 кейса. Для ×5 — сразу результат.
+    if (count === 1) {
+      await showRoulette(data.car);
+    }
+
     state.balance = data.balance;
-    state.cars.push(data.car);
+    data.cars.forEach(cc => state.cars.push(cc));
     if (data.level !== undefined) state.level = data.level;
     if (data.xp !== undefined) state.xp = data.xp;
     if (data.xp_next !== undefined) state.xpNext = data.xp_next;
     render();
-    showContainerResult(data.car, false);
+
+    if (count === 1) {
+      renderCar(data.car, true);
+      showContainerResult(data.car);
+    } else {
+      renderCar(data.cars[data.cars.length - 1], true);
+      showRollResults(data.cars, data.xp_gained);
+    }
     if (data.xp_gained) showXpToast(`+${data.xp_gained} XP`);
   } catch (e) { alert("Ошибка связи"); }
 }
